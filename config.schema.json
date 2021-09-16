@@ -1,0 +1,206 @@
+{
+  "pluginAlias": "BoschControlPanel_BGSeries",
+  "pluginType": "platform",
+  "singular": false,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "Name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "Bosch B and G Control Panel"
+      },
+      "Host":{
+        "title":"Host",
+        "type":"string",
+        "required": true
+      },
+      "Port":{
+        "title":"Port",
+        "type": "integer",
+        "required": true,
+        "default" : 7700
+      },
+      "Passcode":{
+        "title":"Application Passcode",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "Areas":{
+        "required":false,
+        "type": "array",
+        "items":{
+          "title":"Area",
+          "type":"object",
+          "properties":{
+            "Areanumber":{
+              "type": "integer",
+               "title": "Area Number",
+               "required": true
+            },
+            "CustomText":{
+              "title":"Custom Area Text",
+              "description": "Keep empty to use area text from control panel",
+              "type": "string",
+              "default": ""
+             },
+            "Active":{
+              "title": "Show Accessory in Home App",
+              "type": "boolean",
+              "default": true
+           }
+        }
+      }
+    },
+      "Points" :{
+        "required": false,
+         "type": "array",
+           "items":{
+             "title": "Point (Control Panel Sensor)",
+             "type": "object",
+             "properties":{
+             "PointNumber": {
+               "type": "integer",
+               "title": "Number",
+               "required": true
+             },
+             "CustomText":{
+              "title":"Custom Point Text",
+              "description": "Keep empty to use point text from control panel",
+              "type": "string",
+              "default": ""
+             },
+            "SensorType":{
+              "type": "string",
+              "title": "Sensor Type",
+              "required": true,
+              "default": "MotionSensor",
+              "oneOf": [
+                {
+                  "title": "Motion Sensor",
+                  "enum": [
+                    "MotionSensor"
+                  ]
+                  },
+                  {
+                    "title": "Contact Sensor",
+                    "enum": [
+                        "ContactSensor"
+                      ]
+                    },
+                    {
+                      "title": "Leak Sensor",
+                      "enum": [
+                        "LeakSensor"
+                      ]
+                    },
+                    {
+                      "title": "CO Sensor",
+                      "enum": [
+                        "COSensor"
+                      ]
+                    },
+                    {
+                      "title": "Smoke Sensor",
+                      "enum": [
+                        "SmokeSensor"
+                      ]
+                    }
+              ]
+            },
+            "Active":{
+              "title": "Show Accessory in Home App",
+              "type": "boolean",
+              "default": true
+            }
+            }
+          }
+      }
+    }
+  },
+  "layout": [
+    "Name",
+    {
+      "type": "flex",
+      "flex-flow": "row wrap",
+      "items": [
+        "Host", "Port","Passcode"
+      ]
+    },
+    {
+      "key": "Areas",
+      "type": "array",
+      "orderable": false,
+      "expandable": true,
+      "expanded": true,
+      "buttonText": "Add Area",
+      "items": [
+        {
+          "type": "div",
+          "displayFlex": true,
+          "flex-direction": "column",
+          "items": [
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Areas[].Areanumber", "flex": "2 2 25px"},
+                {"key": "Areas[].CustomText", "flex": "8 8 50px"}
+              ]
+            },
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Areas[].Active", "flex": "2 2 10px"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "Points",
+      "type": "array",
+      "title":"Points (Control Panel Sensor)",
+      "expandable": true,
+      "expanded": true,
+      "buttonText": "Add Point",
+      "items": [
+        {
+          "type": "div",
+          "displayFlex": true,
+          "flex-direction": "column",
+          "items": [
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Points[].PointNumber", "flex": "1 1 25px"},
+                {"key": "Points[].SensorType", "flex": "3 3 50px"},
+                {"key": "Points[].CustomText", "flex": "5 5 100px"}
+              ]
+            },
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Points[].Active", "flex": "2 2 10px"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+
+
+           
