@@ -6,7 +6,7 @@ This Homebridge platform plugin allows you to:
 * Control your Bosch Security System state (Arm, Disarm, Part on instant, Part on delay)
 * Use your control panel sensors for home automation purposes
 
-![Screenshot](BCP.jpg)
+![Screenshot](BCP.png)
 
 ## Supported Control Panels
 
