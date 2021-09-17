@@ -1,4 +1,4 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic, uuid } from 'homebridge';
+import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType } from './BGController';
 import { BoschSecurityPanel } from './BoschSecurityPanel';
@@ -256,7 +256,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     });
 
     // Set notification management for sensor status change
-    this.Panel.on('PointStatusChange', (Point, Area) => {
+    this.Panel.on('PointStatusChange', (Point) => {
       for(let i = 0 ; i < this.SensorArray.length ; i++){
         const Sensor = this.SensorArray[i];
         if(Sensor.Point.PointNumber === Point.PointNumber){
