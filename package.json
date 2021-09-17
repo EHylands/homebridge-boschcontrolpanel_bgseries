@@ -6,7 +6,7 @@
   "license": "mit",
   "repository": {
     "type": "mit",
-    "url": "git://github.com/ehylands/homebridge-boschcontrolpanel_bgseries-bgpanel.git"
+    "url": "git://github.com/ehylands/homebridge-boschcontrolpanel_bgseries.git"
   },
   "bugs": {
     "url": "https://github.com/ehylands/homebridge-boschcontrolpanel_bgseries/issues"
