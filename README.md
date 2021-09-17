@@ -3,7 +3,7 @@
 
 This Homebridge platform plugin allows you to:
 
-* Control your security system state (Arm, Disarm, Part on instant, Part on delay)
+* Control your Bosch Security System state (Arm, Disarm, Part on instant, Part on delay)
 * Use your control panel sensors for home automation purposes
 
 ## Supported Control Panels
@@ -13,10 +13,19 @@ This Homebridge platform plugin allows you to:
 
 ## Procedure to configure your Bosch Control Panel
 
-* Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming). Use Panel View. 
+#### Easy configuration method
+Contact your Bosch Control Panel installer. The following configuration option can be remotly applied to your panel:
+* In AUTOMATION - REMOTE APP menu: "Automation Device" needs to be set to "Mode 2" 
+* In AUTOMATION - REMOTE APP menu: Set an "Automation passcode" 
+
+#### Hard configuration method
+
+
+
+* Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming). 
 * In AUTOMATION - REMOTE APP menu: "Automation Device" needs to be set to "Mode 2" 
 * In AUTOMATION - REMOTE APP menu: Set an "Automation passcode"
-* Install the latest Control Panel firmware update. Older firmware may be limited to TLS 1.0 wich prevent homebridge from establishing connexion. 
+* Install the latest Control Panel firmware update. Older firmware may be limited to TLS 1.0 wich prevent homebridge from establishing a connexion. 
 * This plugin supports Intrusion Integration Protocol Version 5.208 and newer (to get event driven notifications)
  
 
