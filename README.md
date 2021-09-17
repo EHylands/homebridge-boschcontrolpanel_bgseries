@@ -13,14 +13,14 @@ This Homebridge platform plugin allows you to:
 
 ## Procedure to configure your Bosch Control Panel
 
-#### Easy configuration method
+### Easy configuration method
 Contact your Bosch Control Panel installer. The following required configuration options can be remotely applied to your panel.
 
-#### Hard configuration method
+### Hard configuration method
 * Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
 * Initial connection to your Bosch Control Panel through ethernet requires your panel RPS Passcode. If RPS Passcode is not avaiblable, connection to panel can be established with a direct USB cable. 
 
-#### Required control panel configurations options
+### Required control panel configurations options
 * In AUTOMATION - REMOTE APP menu, set "Automation Device" to "Mode 2" 
 * In AUTOMATION - REMOTE APP menu, set an "Automation passcode" 
 * In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR menu, note TCP/UDP PORT NUMBER (default to 7700) 
