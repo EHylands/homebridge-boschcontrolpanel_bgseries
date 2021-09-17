@@ -7,10 +7,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "mit",
-    "url": "git://github.com/ehylands/homebridge-boschsecuritycontroller-bgpanel.git"
+    "url": "git://github.com/ehylands/homebridge-boschcontrolpanel_bgseries-bgpanel.git"
   },
   "bugs": {
-    "url": "https://github.com/ehylands/homebridge-boschsecuritycontroller-bgpanel/issues"
+    "url": "https://github.com/ehylands/homebridge-boschcontrolpanel_bgseries/issues"
   },
   "engines": {
     "node": ">=12.13.0",
