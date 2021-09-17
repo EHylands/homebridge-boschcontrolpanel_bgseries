@@ -42,6 +42,16 @@ export class BoschSecurityPanel {
     return HKStatus;
   }
 
+  SetAlarmTriggered(AlarmTrigerred){
+    if(AlarmTrigerred){
+      this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
+        this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
+    } else{
+      this.handleSecuritySystemCurrentStateGet();
+    }
+  }
+
+
   handleSecuritySystemTargetStateGet() {
     const AreaIndex = this.Panel.GetAreaIndex(this.AreaMonitored);
 

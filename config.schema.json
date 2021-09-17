@@ -23,7 +23,7 @@
         "default" : 7700
       },
       "Passcode":{
-        "title":"Application Passcode",
+        "title":"Automation Passcode",
         "type": "string",
         "required": true,
         "default": ""
@@ -37,7 +37,7 @@
           "properties":{
             "Areanumber":{
               "type": "integer",
-               "title": "Area Number",
+               "title": "Number",
                "required": true
             },
             "CustomText":{

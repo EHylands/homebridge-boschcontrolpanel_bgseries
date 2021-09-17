@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic, uuid } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType } from './BGController';
+import { BGArea, BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType } from './BGController';
 import { BoschSecurityPanel } from './BoschSecurityPanel';
 import { BGMotionSensor } from './BGMotionSensor';
 import { BGContactSensor } from './BGContactSensor';
@@ -41,7 +41,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.debug('Finished initializing platform:', this.config.Name);
 
     if(!this.CheckConfigPhase1()){
-      log.error('Aborting: Panel Host, Port or Passcode not found in config file');
+      log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
       this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode);
       return;
     }
@@ -242,7 +242,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
       // Phase 2 config file check
       if(!this.CheckConfigPhase2()){
-        this.log.error('Aborting plugin operation');
+        this.log.error('Aborting plugin operation - Failed Config Phase 2');
         return;
       }
 
@@ -256,7 +256,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     });
 
     // Set notification management for sensor status change
-    this.Panel.on('PointStatusChange', (Point) => {
+    this.Panel.on('PointStatusChange', (Point, Area) => {
       for(let i = 0 ; i < this.SensorArray.length ; i++){
         const Sensor = this.SensorArray[i];
         if(Sensor.Point.PointNumber === Point.PointNumber){
@@ -265,9 +265,26 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
     });
 
+    this.Panel.on('AreaAlarmStateChange', (Area)=>{
+      if(Area.BurglaryAlarm === BGAlarmType.Alarm ||
+        Area.FireAlarm === BGAlarmType.Alarm ||
+        Area.GazAlarm === BGAlarmType.Alarm ||
+        Area.PersonnalAlarm ===BGAlarmType.Alarm){
+        // Alarm has been detected in zone
+
+        for(let i = 0 ; i < this.ControlPanelArray.length ; i++){
+          const Panel = this.ControlPanelArray[i];
+          if(Panel.AreaMonitored === Area.AreaNumber){
+            Panel.SetAlarmTriggered(true);
+            return;
+          }
+        }
+      }
+    });
+
     // Set notification management for Confidence messages sent by panel
     this.Panel.on('ConfidenceMessage', () => {
-      this.log.debug('Receive Confidence Message from Panel');
+      this.log.debug('Received Confidence Message from Panel');
     });
 
     this.Panel.on('AreaOnOffStateChange', (Area)=>{
@@ -281,7 +298,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     });
 
     this.Panel.on('ControllerError', (Error, ErrorString) => {
-      this.log.error(Error + ErrorString);
+      this.log.error(Error + ' ' + ErrorString);
     });
 
     // Start panel discovery

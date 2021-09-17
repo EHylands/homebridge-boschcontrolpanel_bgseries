@@ -156,7 +156,7 @@ export enum BGArmingType{
   ForcePerimeterInstantArm = 0x09
 }
 
-enum BGAlarmType{
+export enum BGAlarmType{
   Normal,
   Supervisory,
   Trouble,
@@ -216,7 +216,7 @@ export class BGArea{
       return;
     }
 
-    this.FireAlarm = BGAlarmType.Unkown;
+    this.FireAlarm = BGAlarmType.Normal;
   }
 
   private SetGazAlarm(AlarmAnnunciationPriority: number){
@@ -235,7 +235,7 @@ export class BGArea{
       return;
     }
 
-    this.GazAlarm = BGAlarmType.Unkown;
+    this.GazAlarm = BGAlarmType.Normal;
   }
 
   private SetPersonnalAlarm(AlarmAnnunciationPriority: number){
@@ -244,7 +244,7 @@ export class BGArea{
       return;
     }
 
-    this.PersonnalAlarm = BGAlarmType.Unkown;
+    this.PersonnalAlarm = BGAlarmType.Normal;
   }
 
   private SetBurglaryAlarm(AlarmAnnunciationPriority: number){
@@ -263,7 +263,7 @@ export class BGArea{
       return;
     }
 
-    this.BurglaryAlarm = BGAlarmType.Unkown;
+    this.BurglaryAlarm = BGAlarmType.Normal;
   }
 
   SetAlarm(AlarmAnnunciationPriority: number){
@@ -322,9 +322,10 @@ export class BoschPanelOutput{
 export interface BoschControllerMode2Event {
   'PanelReadyForOperation': (PanelReady: boolean) => void;
   'ControllerError': (Error: BGControllerError, ErrorString: string) => void;
-  'PointStatusChange': (Point: BGPoint) => void;
+  'PointStatusChange': (Point: BGPoint, Area: BGArea) => void;
   'AreaReadyStateChange':(Area: BGArea) => void;
   'AreaOnOffStateChange':(Area: BGArea) => void;
+  'AreaAlarmStateChange':(Area: BGArea) => void;
   'ConfidenceMessage':() => void;
 }
 
@@ -391,8 +392,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.Socket.on('data', (data: Buffer) => {
         const Protocol = data[0];
         const Data = data.slice(1, data.length);
-
-        //console.log(Data);
 
         switch(Protocol){
           case 0x01:{
@@ -606,8 +605,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             //Get Area Index
             const AreaIndex = this.GetAreaIndexFromNumber(AreaNumber);
             const PointIndex = this.GetPointIndexFromNumber(AreaIndex, PointNumber);
-            this.AreaArray[AreaIndex].PointArray[PointIndex].UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
-            this.emit('PointStatusChange', this.AreaArray[AreaIndex].PointArray[PointIndex]);
+            const Point = this.AreaArray[AreaIndex].PointArray[PointIndex];
+            Point.UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
+            this.emit('PointStatusChange', Point, this.AreaArray[AreaIndex]);
+
+            // if possible alarm, read areas status
+            if(Condition !== 0){
+              this.SendMode2ReqAreaStatus();
+            }
           }
         }
       }
@@ -1059,7 +1064,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const it = (length - 1) /5;
 
       for(let i = 0; i<it ; i++){
-        //let index = (this.AreaReadingIndex * MaxAreaNumberPerRequest) + i;
         const AreaNumberHigh = Data[(i*5) + 2];
         const AreaNumberLow = Data[(i*5) + 3];
 
@@ -1073,11 +1077,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           const AlarmAnnunciationPriority = (AlarmAnnunciationPriorityHigh << 8) + AlarmAnnunciationPriorityLow;
           Area.SetAlarm(AlarmAnnunciationPriority);
 
-          console.log('Area' + Area.AreaNumber+ ': Status: ' + BGAreaStatus[Area.AreaStatus]);
-          console.log(' Fire: ' + BGAlarmType[Area.FireAlarm]);
-          console.log(' Gaz: ' + BGAlarmType[Area.GazAlarm]);
-          console.log(' Personnal: ' + BGAlarmType[Area.PersonnalAlarm]);
-          console.log(' Burglary: ' + BGAlarmType[Area.BurglaryAlarm]);
+          if(Area.FireAlarm !== BGAlarmType.Normal ||
+            Area.BurglaryAlarm !== BGAlarmType.Normal ||
+            Area.GazAlarm !== BGAlarmType.Normal ||
+            Area.PersonnalAlarm !== BGAlarmType.Normal){
+            // Send alarm notification
+
+          }
         }
       }
 
@@ -1088,8 +1094,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         // Done reading all area status
         this.CurrentControllerState = BGControllerState.Idle;
         this.AreaReadingIndex = 0;
-        //this.SendMode2ReqOutputStatus();
-        this.emit('PanelReadyForOperation', true);
       }
     }
 
