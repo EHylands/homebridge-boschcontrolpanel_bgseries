@@ -34,7 +34,7 @@ Contact your Bosch Control Panel installer. The following required configuration
 * `Host`: IP address of your Bosch Control Panel
 * `Port`: Port number of your Bosch Control Panel (default to 7700)
 * `Automation passcode`: Value as configured on your Bosch Control Panel (See required configurations options)
-### Areas parameters (Only add area to be monitored in config file)
+### Areas parameters (Only add areas to be monitored in config file)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area state
 * `Custom Area Text`: Any value entered here will override the Area text configured on your Control Panel. 
