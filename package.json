@@ -1,5 +1,4 @@
 {
-  "private": true,
   "displayName": "Bosch B and G Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
   "version": "1.0.0",
