@@ -1,9 +1,9 @@
 {
   "displayName": "Bosch B and G Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
-  "version": "1.0.1-beta.0",
+  "version": "0.0.1-beta.0",
   "description": "Homekit integration for Bosch B and G control panel.",
-  "license": "Apache-2.0",
+  "license": "mit",
   "repository": {
     "type": "mit",
     "url": "git://github.com/ehylands/homebridge-boschcontrolpanel_bgseries-bgpanel.git"
