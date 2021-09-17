@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic, uuid } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGArea, BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType } from './BGController';
+import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType } from './BGController';
 import { BoschSecurityPanel } from './BoschSecurityPanel';
 import { BGMotionSensor } from './BGMotionSensor';
 import { BGContactSensor } from './BGContactSensor';
