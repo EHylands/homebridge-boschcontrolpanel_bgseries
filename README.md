@@ -18,16 +18,34 @@ Contact your Bosch Control Panel installer. The following required configuration
 
 #### Hard configuration method
 * Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
-* Initial connection to your Bosch Control Panel through network requires your panel RPS Passcode. If RPS Passcode is not avaiblable, connection to panel can be established with a direct USB cable. 
+* Initial connection to your Bosch Control Panel through ethernet requires your panel RPS Passcode. If RPS Passcode is not avaiblable, connection to panel can be established with a direct USB cable. 
 
-#### Required configurations options
-* In AUTOMATION - REMOTE APP menu: "Automation Device" needs to be set to "Mode 2" 
-* In AUTOMATION - REMOTE APP menu: Set an "Automation passcode" 
-* In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR - TCP/UDP PORT NUMBER (default to 7700) 
+#### Required control panel configurations options
+* In AUTOMATION - REMOTE APP menu, set "Automation Device" to "Mode 2" 
+* In AUTOMATION - REMOTE APP menu, set an "Automation passcode" 
+* In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR menu, note TCP/UDP PORT NUMBER (default to 7700) 
 * Install the latest Control Panel firmware update. Older firmware may be limited to TLS 1.0 wich prevent homebridge from establishing a connexion.
 * This plugin supports Intrusion Integration Protocol Version 5.208 and newer (to get event driven notifications) 
 
-## Configuration
+## Homebride pluging configuration file
+
+### General parameters
+* `Name` : Plugin name
+* `Host`: IP address of your Bosch Control Panel
+* `Port`: Port number of your Bosch Control Panel (default to 7700)
+* `Automation passcode`: Value as configured on your Bosch Control Panel (See required configurations options)
+### Areas parameters
+* `Number`: Area number on the Control Panel to be monitored by the plugin
+* `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area state
+* `Custom Area Text`: Any value entered here will override the Area text configured on your Control Panel. 
+### Points (Control Panel Sendor) parameters
+* `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all available sensors for configuration.
+* `Show Accessory in Home App`: Show Sensor Accessory in Home App for automation purposes. 
+* `Custom Point Text`: Any value entered here will override the Point text configured on your Control Panel. 
+* `Sensor Type`
+** test
+
+
 
 This is a template Homebridge platform plugin and can be used as a base to help you get started developing your own plugin.
 
