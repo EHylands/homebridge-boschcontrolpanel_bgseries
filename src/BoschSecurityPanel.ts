@@ -117,7 +117,7 @@ export class BoschSecurityPanel {
       }
 
       case BGAreaStatus.PartOnDelay:{
-        return this.platform.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+        return this.platform.Characteristic.SecuritySystemCurrentState.STAY_ARM;
       }
 
       case BGAreaStatus.PartOnEntryDelay:{
