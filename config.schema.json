@@ -35,7 +35,7 @@
           "title":"Area",
           "type":"object",
           "properties":{
-            "Areanumber":{
+            "AreaNumber":{
               "type": "integer",
                "title": "Number",
                "required": true

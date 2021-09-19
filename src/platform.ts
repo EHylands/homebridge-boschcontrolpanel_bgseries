@@ -143,7 +143,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
         const Area = this.config.Areas[i];
         const Active = Area.Active;
-        const AreaNumber = Area.Areanumber;
+        const AreaNumber = Area.AreaNumber;
         const PanelArea = this.Panel.GetArea(AreaNumber);
 
         if(!Active){
@@ -348,6 +348,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.debug('Panel Max Users: ' + this.Panel.MaxUsers);
     this.log.debug('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.debug('Panel Max Doors: ' + this.Panel.MaxDoors);
+
+    this.log.debug('Areas and Points confiigured an active on this Panel:');
 
     for(let i = 0 ; i < this.Panel.AreaArray.length ; i++){
       const Area = this.Panel.AreaArray[i];
