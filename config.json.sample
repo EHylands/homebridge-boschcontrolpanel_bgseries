@@ -1,0 +1,42 @@
+{
+    "Name": "Bosch B and G Control Panel",
+    "Host": "192.168.1.1",
+    "Port": 7700,
+    "Passcode": "1111111",
+    "Areas": [{
+        "Areanumber": 1,
+            "CustomText": "Area 1",
+            "Active": true
+    }],
+    "Points": [{
+        "PointNumber": 1,
+        "CustomText": "Kitchen",
+        "SensorType": "MotionSensor",
+        "Active": true
+    },
+    {
+        "PointNumber": 2,
+        "CustomText": "Front Door",
+        "SensorType": "ContactSensor",
+        "Active": true
+    },
+    {
+        "PointNumber": 3,
+        "CustomText": "Basement",
+        "SensorType": "SmokeSensor",
+        "Active": true
+    },
+    {
+        "PointNumber": 4,
+        "CustomText": "Washroom",
+        "SensorType": "LeakSensor",
+        "Active": true
+    },
+    {
+        "PointNumber": 5,
+        "CustomText": "Fireplace",
+        "SensorType": "COSensor",
+        "Active": true
+    }],
+    "platform": "BoschControlPanel_BGSeries"
+}
