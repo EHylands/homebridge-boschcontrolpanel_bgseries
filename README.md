@@ -30,7 +30,7 @@ Contact your Bosch Control Panel installer. The following required configuration
 * This plugin supports Intrusion Integration Protocol Version 5.208 and newer (to get event driven notifications) 
 
 ## Homebride pluging configuration file
-
+Please see sample config file0.0.6 [comfig.json.sample](config.json.sample)
 ### General parameters
 * `Name` : Plugin name
 * `Host`: IP address of your Bosch Control Panel
