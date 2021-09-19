@@ -4,7 +4,7 @@
     "Port": 7700,
     "Passcode": "1111111",
     "Areas": [{
-        "Areanumber": 1,
+        "AreaNumber": 1,
             "CustomText": "Area 1",
             "Active": true
     }],
