@@ -39,12 +39,24 @@ Contact your Bosch Control Panel installer. The following required configuration
 ### Areas parameters (Only add areas to be monitored in config file)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area state
-* `Custom Area Text`: Any value entered here will override the Area text configured on your Control Panel. 
+* `Custom Area Text`: Any value entered here will override the Area text configured on your Control Panel. Custom text is only applied to Homebridge and Homme App. This plugin doesn't modify any data directly on the Control Panel.
 ### Points - Control Panel Sensor parameters (Only add points to be monitored in config file)
 * `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all available sensors for configuration.
 * `Show Accessory in Home App`: Show Sensor Accessory in Home App for automation purposes. 
-* `Custom Point Text`: Any value entered here will override the Point text configured on your Control Panel. 
+* `Custom Point Text`: Any value entered here will override the Point text configured on your Control Panel. Custom text is only applied to Homebridge and Homme App. This plugin doesn't modify any data directly on the Control Panel.
 * `Sensor Type`: Motion Sensor, Contact Sensor, Leak Sensor, CO Sensor or Smoke Sensor
+
+
+## Operation
+
+### Securiity System Accessory:
+The following conversions are applied between Homemit Area Arming state and Bosch Control Panel Area Arming state: 
+
+| Homekit Arming State | Bosch Arming State|
+| Off | Disarmed
+| Away | All On Delay
+| Night | Part On Instant
+| Home | Part On Delay
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.
