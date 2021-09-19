@@ -58,7 +58,6 @@ The following conversions are applied between Homemit Area Arming state and Bosc
 | Away | All On Delay
 | Night | Part On Instant
 | Home | Part On Delay
-|
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.
