@@ -50,9 +50,9 @@ Contact your Bosch Control Panel installer. The following required configuration
 ## Operation
 
 ### Securiity System Accessory:
-The following conversions are applied between Homemit Area Arming state and Bosch Control Panel Area Arming state: 
+The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 
 
-| Homekit Arming State | Bosch Arming State|
+| Homekit Area Arming State | Bosch Area Arming State|
 | ------ | ------ | 
 | Off | Disarmed
 | Away | All On Delay
