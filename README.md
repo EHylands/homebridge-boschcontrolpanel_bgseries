@@ -53,10 +53,12 @@ Contact your Bosch Control Panel installer. The following required configuration
 The following conversions are applied between Homemit Area Arming state and Bosch Control Panel Area Arming state: 
 
 | Homekit Arming State | Bosch Arming State|
+| ------ | ------ | 
 | Off | Disarmed
 | Away | All On Delay
 | Night | Part On Instant
 | Home | Part On Delay
+|
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.
