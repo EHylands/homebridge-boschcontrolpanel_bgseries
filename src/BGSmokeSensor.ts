@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { BGSensor } from './BGSensor';
-import { BGPoint } from './BGController';
+import { BGController, BGPointStatus } from './BGController';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class BGSmokeSensor extends BGSensor {
@@ -8,20 +8,21 @@ export class BGSmokeSensor extends BGSensor {
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,
     protected readonly accessory: PlatformAccessory,
-    readonly Point: BGPoint,
+    protected readonly Panel: BGController,
+    readonly PointNumber: number,
   ) {
 
-    super(platform, accessory, Point, BGSensorType.SmokeSensor);
+    super(platform, accessory, Panel, PointNumber, BGSensorType.SmokeSensor);
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'BG Control Panel')
       .setCharacteristic(this.platform.Characteristic.Model, 'BG Smoke Sensor')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, '123456');
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
 
     this.service.getCharacteristic(this.platform.Characteristic.SmokeDetected)
-      .onGet(this.HandleEventDetected.bind(this));
+      .onGet(this.HandleOnGet.bind(this));
   }
 
   GetService():Service{
@@ -29,19 +30,22 @@ export class BGSmokeSensor extends BGSensor {
     || this.accessory.addService(this.platform.Service.SmokeSensor);
   }
 
-  HandleEventDetected(EventDetected:boolean):boolean{
-    if(EventDetected !== undefined){
-
-      if(EventDetected){
-        this.service.updateCharacteristic(this.platform.Characteristic.SmokeDetected,
-          this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED);
-      } else{
-        this.service.updateCharacteristic(this.platform.Characteristic.SmokeDetected,
-          this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
-      }
-
-      return EventDetected;
+  HandleOnGet() {
+    const Point = this.Panel.GetPointFromIndex(this.AreaIndex, this.PointIndex);
+    if(Point.PointStatus !== BGPointStatus.Normal){
+      return this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED;
+    } else{
+      return this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
     }
-    return false;
+  }
+
+  HandleEventDetected(EventDetected:boolean){
+    if(EventDetected){
+      this.service.updateCharacteristic(this.platform.Characteristic.SmokeDetected,
+        this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED);
+    } else{
+      this.service.updateCharacteristic(this.platform.Characteristic.SmokeDetected,
+        this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
+    }
   }
 }

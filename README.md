@@ -36,16 +36,27 @@ Please see sample config file [config.sample.json](config.sample.json)
 * `Host`: IP address of your Bosch Control Panel
 * `Port`: Port number of your Bosch Control Panel (default to 7700)
 * `Automation passcode`: Value as configured on your Bosch Control Panel (See required configurations options)
-### Areas parameters (Only add areas to be monitored in config file)
+### Areas (Only add areas to be monitored in config file)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area state
 * `Custom Area Text`: Any value entered here will override the Area text configured on your Control Panel. Custom text is only applied to Homebridge and Homme App. This plugin doesn't modify any data directly on the Control Panel.
-### Points - Control Panel Sensor parameters (Only add points to be monitored in config file)
-* `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all available sensors for configuration.
+### Points - Control Panel Sensors (Only add points to be monitored in config file)
+* `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all sensors available for configuration.
 * `Show Accessory in Home App`: Show Sensor Accessory in Home App for automation purposes. 
 * `Custom Point Text`: Any value entered here will override the Point text configured on your Control Panel. Custom text is only applied to Homebridge and Homme App. This plugin doesn't modify any data directly on the Control Panel.
 * `Sensor Type`: Motion Sensor, Contact Sensor, Leak Sensor, CO Sensor or Smoke Sensor
+### Outputs (Only add outputs to be monitored in config file)
+* `Number`: Output number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all outputs available for configuration.
+* `Show Accessory in Home App`: Show Output Accessory in Home App. 
+* `Custom Output Text`: Any value entered here will override the Output text configured on your Control Panel. Custom text is only applied to Homebridge and Homme App. This plugin doesn't modify any data directly on the Control Panel.
 
+### Accessory Custom Text additional information: 
+Once an accessory has been added to Homekit, Homebridge cannot change it display name. The following procedure should be followed to change an accessory custom text:
+* Change accessory Custom Text in config file
+* Uncheck accessory "Show Accessory in Home App"
+* Restart Homebridge
+* Check accessory "Show Accessory in Home App"
+* Restart Homebridge, change should be present at that point in HomekitApp.
 
 ## Operation
 
@@ -58,6 +69,13 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Away | All On Delay
 | Night | Part On Instant
 | Home | Part On Delay
+
+# Releases
+## 0.1.0
+* Accessories universally unique identifier had to be changed. Some accessory automation may have to be reconfigured after upgrading plugin to version 0.1.0
+* Adding panel output support to plugin.
+* Adding plugin automatic reconnection to control panel in case of connection timeout or connection lost. 
+* Adding Homekit unique serial number for accessory. Issue was causing errors in some 3rd party Homekit app. 
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.

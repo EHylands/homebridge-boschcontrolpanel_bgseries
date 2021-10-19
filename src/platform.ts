@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType } from './BGController';
+import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType, BGControllerError } from './BGController';
 import { BoschSecurityPanel } from './BoschSecurityPanel';
 import { BGMotionSensor } from './BGMotionSensor';
 import { BGContactSensor } from './BGContactSensor';
@@ -8,6 +8,7 @@ import { BGLeakSensor } from './BGLeakSensor';
 import { BGSmokeSensor } from './BGSmokeSensor';
 import { BGCOSensor } from './BGCOSensor';
 import { BGSensor } from './BGSensor';
+import { BGOutputAccessory } from './BGOutputAccessory';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',
@@ -25,12 +26,16 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   public CreatedAccessories: PlatformAccessory[] = [];
 
   private SensorArray:BGSensor[] = [];
+  private OutputArray:BGOutputAccessory[] = [];
   private ControlPanelArray: BoschSecurityPanel[] = [];
+
   public Panel: BGController;
 
   private PanelHost = '';
   private PanelPort = 14999;
   private PanelPasscode = '';
+
+  private InitialRun = true;
 
   constructor(
     public readonly log: Logger,
@@ -80,7 +85,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
   // Second config check
   // Check that areas exist whitout any duplicate
-  // Checl that points exist whitout any duplicate
+  // Check that points exist whitout any duplicate
+  // Check that outputs exit without any duplicate
   CheckConfigPhase2():boolean{
 
     let NumberOfPointInConfig = 0;
@@ -94,19 +100,19 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const PointInConfig = this.config.Points[i];
       const PointInPanel = this.Panel.GetPoint(PointInConfig.PointNumber);
 
-      //Check for duplicate poit
-      if(TempPoint.indexOf(PointInConfig.PointNumber) !== -1){
-        this.log.error('Aborting: Dupicatee Point' + PointInConfig.PointNumber + ' in config file');
-        return false;
-      }
-
-      TempPoint.push(PointInConfig.PointNumber);
-
       // Point in config not found in panel;
       if(PointInPanel === null){
         this.log.error('Aborting: Point' + PointInConfig.PointNumber + ' in config file is not configured on the panel');
         return false;
       }
+
+      //Check for duplicate point
+      if(TempPoint.indexOf(PointInConfig.PointNumber) !== -1){
+        this.log.error('Aborting: Dupicate Point' + PointInConfig.PointNumber + ' in config file');
+        return false;
+      }
+
+      TempPoint.push(PointInConfig.PointNumber);
     }
 
     let NumberOfAreaInConfig = 0;
@@ -118,23 +124,93 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     for(let i = 0 ; i < NumberOfAreaInConfig ; i++){
       const AreaInConfig = this.config.Areas[i];
-      const AreaInPanel = this.Panel.GetArea(AreaInConfig.Areanumber);
-
-      //Check for duplicate area
-      if(TempArea.indexOf(AreaInConfig.Areanumber) !== -1){
-        this.log.error('Aborting: Dupicate Area' + AreaInConfig.PointNumber + ' in config file');
-        return false;
-      }
-
-      TempPoint.push(AreaInConfig.Pointnumber);
+      const AreaInPanel = this.Panel.GetAreaFromNumber(AreaInConfig.AreaNumber);
 
       if(AreaInPanel === null){
-        this.log.error('Aborting: Area' + AreaInConfig.Areanumber + ' in config file is not configured on the panel');
+        this.log.error('Aborting: Area' + AreaInConfig.AreaNumber + ' in config file is not configured on the panel');
         return false;
       }
+
+      //Check for duplicate area
+      if(TempArea.indexOf(AreaInConfig.AreaNumber) !== -1){
+        this.log.error('Aborting: Duplicate Area' + AreaInConfig.AreaNumber + ' in config file');
+        return false;
+      }
+
+      TempArea.push(AreaInConfig.AreaNumber);
     }
 
+    // Outputs
+    let NumberOfOutputInConfig = 0;
+    if(this.config.Outputs !== undefined){
+      NumberOfOutputInConfig = this.config.Outputs.length;
+    }
+
+    const TempOutput: number[] = [];
+
+    for(let i = 0 ; i < NumberOfOutputInConfig ; i++){
+      const OutputInConfig = this.config.Outputs[i];
+      const OutputInPanel = this.Panel.GetOutput(OutputInConfig.OutputNumber);
+
+      if(OutputInPanel === null){
+        this.log.error('Aborting: Output' + OutputInConfig.OutputNumber + ' in config file is not configured on the panel');
+        return false;
+      }
+
+      //Check for duplicate output
+      if(TempOutput.indexOf(OutputInConfig.OutputNumber) !== -1){
+        this.log.error('Aborting: Duplicate Output' + OutputInConfig.OutputNumber + ' in config file');
+        return false;
+      }
+
+      TempArea.push(OutputInConfig.OutputNumber);
+    }
     return true;
+  }
+
+  private DiscoverOutputs(){
+
+    if(this.config.Outputs !== undefined){
+      for(let i = 0 ; i < this.config.Outputs.length;i++){
+
+        const Output = this.config.Outputs[i];
+        const Active = Output.Active;
+        const OutputNumber = Output.OutputNumber;
+        const PanelOutput = this.Panel.GetOutput(OutputNumber);
+
+        if(!Active){
+          // Do not add accessory
+          continue;
+        }
+
+        if(PanelOutput === null){
+          this.log.error('Output' + OutputNumber + ' in the config file is not configured on the panel');
+          continue;
+        }
+
+        let OutputText = PanelOutput.OutputText;
+        if(Output.CustomText !== undefined && Output.CustomText !== ''){
+          OutputText = Output.CustomText;
+        }
+
+        const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
+        const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+        if (existingAccessory) {
+          this.log.info('Updating', 'Output' + OutputNumber+': ' + OutputText + ' ' );
+          existingAccessory.displayName = OutputText;
+          this.OutputArray.push(new BGOutputAccessory(this, existingAccessory, this.Panel, OutputNumber));
+          this.CreatedAccessories.push(existingAccessory);
+          this.api.updatePlatformAccessories([existingAccessory]);
+        } else{
+          this.log.info('Adding accessory from cache:', 'Bosch Panel ' +
+          BGPanelType[this.Panel.PanelType] + ', Output: ' + OutputNumber);
+          const accessory = new this.api.platformAccessory(OutputText, uuid);
+          this.OutputArray.push(new BGOutputAccessory(this, accessory, this.Panel, OutputNumber));
+          this.CreatedAccessories.push(accessory);
+          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        }
+      }
+    }
   }
 
   private DiscoverAreas(){
@@ -144,27 +220,27 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         const Area = this.config.Areas[i];
         const Active = Area.Active;
         const AreaNumber = Area.AreaNumber;
-        const PanelArea = this.Panel.GetArea(AreaNumber);
+        const PanelArea = this.Panel.GetAreaFromNumber(AreaNumber);
 
         if(!Active){
           // Do not add accessory
           continue;
         }
 
-        let AreaText = 'Area ' + AreaNumber;
-        if(PanelArea !== null){
-          AreaText = PanelArea.AreaText;
+        if(PanelArea === null){
+          this.log.error('Area' + AreaNumber + ' in the config file is not configured on the panel');
+          continue;
         }
 
+        let AreaText = PanelArea.AreaText;
         if(Area.CustomText !== undefined && Area.CustomText !== ''){
           AreaText = Area.CustomText;
         }
 
-        const uuid = this.api.hap.uuid.generate('Bosch Control Panel' + BGPanelType[this.Panel.PanelType] + Area.Areanumber);
+        const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
         if (existingAccessory) {
-          this.log.info('Restoring existing accessory from cache:', 'Bosch Panel ' +
-          BGPanelType[this.Panel.PanelType] + ', Area: ' + AreaNumber);
+          this.log.info('Updating', 'Bosch Panel ' + BGPanelType[this.Panel.PanelType] + ', Area: ' + AreaNumber);
           existingAccessory.displayName = AreaText;
           this.ControlPanelArray.push(new BoschSecurityPanel(this, existingAccessory, this.Panel, AreaNumber));
           this.CreatedAccessories.push(existingAccessory);
@@ -200,7 +276,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
             PointText = PointInConfig.CustomText;
           }
 
-          const uuid = this.api.hap.uuid.generate('BGPoint' + + this.Panel.PanelType + PointInConfig.SensorType + PointInPanel.PointNumber);
+          const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + PointInConfig.SensorType + PointInPanel.PointNumber);
 
           const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
           if (existingAccessory ) {
@@ -237,8 +313,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   discoverDevices() {
-    this.Panel.on('PanelReadyForOperation', (PanelReady) => {
-      this.log.debug('BG Controller Panel Ready for Operation: ' + PanelReady);
+    this.Panel.on('PanelReadyForOperation', () => {
+      this.log.debug('BG Controller Panel Ready for Operation');
 
       // Phase 2 config file check
       if(!this.CheckConfigPhase2()){
@@ -246,9 +322,14 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         return;
       }
 
-      this.DiscoverAreas();
-      this.DiscoverPoints();
-      this.DeviceCacheCleanUp();
+      if(this.InitialRun){
+        this.DiscoverAreas();
+        this.DiscoverPoints();
+        this.DiscoverOutputs();
+        this.DeviceCacheCleanUp();
+      }
+      this.InitialRun = false;
+
       this.DumpPanelInfo();
 
       // Start panel event notifications.
@@ -259,7 +340,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.Panel.on('PointStatusChange', (Point) => {
       for(let i = 0 ; i < this.SensorArray.length ; i++){
         const Sensor = this.SensorArray[i];
-        if(Sensor.Point.PointNumber === Point.PointNumber){
+        if(Sensor.PointNumber === Point.PointNumber){
           Sensor.HandleEventDetected(Point.PointStatus !== BGPointStatus.Normal);
         }
       }
@@ -290,18 +371,35 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.Panel.on('AreaOnOffStateChange', (Area)=>{
       for(let i = 0; i < this.ControlPanelArray.length ; i++){
         if(this.ControlPanelArray[i].AreaMonitored === Area.AreaNumber){
-          // foud a match
           this.ControlPanelArray[i].handleSecuritySystemCurrentStateGet();
           this.ControlPanelArray[i].handleSecuritySystemTargetStateGet();
         }
       }
     });
 
-    this.Panel.on('ControllerError', (Error, ErrorString) => {
-      this.log.error(Error + ' ' + ErrorString);
+    this.Panel.on('OutputStateChange', (Output)=>{
+      for(let i = 0 ; i < this.OutputArray.length;i ++){
+        if(Output.OutputNumber === this.OutputArray[i].OutputNumber){
+          this.OutputArray[i].HandleOutputChange(Output.OutputState);
+        }
+      }
     });
 
-    // Start panel discovery
+    this.Panel.on('ControllerError', (Error, ErrorString) => {
+      this.log.error(Error + ' (' + ErrorString + ')');
+
+      // Reconnect if connection to panel has been lost
+      if(Error === BGControllerError.ConnectionError){
+
+        setTimeout(() => {
+          this.log.error('Trying to reconnect ....');
+          this.Panel.Connect();
+        }, 60000); // Try to reconnect every 60 sec
+
+      }
+    });
+
+    // Start panel initialisation
     this.Panel.Connect();
   }
 
@@ -310,27 +408,27 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     switch(Accessory.context.SensorType){
 
       case BGSensorType.MotionSensor:{
-        this.SensorArray.push(new BGMotionSensor(this, Accessory, Point));
+        this.SensorArray.push(new BGMotionSensor(this, Accessory, this.Panel, Point.PointNumber));
         break;
       }
 
       case BGSensorType.ContactSensor:{
-        this.SensorArray.push(new BGContactSensor(this, Accessory, Point));
+        this.SensorArray.push(new BGContactSensor(this, Accessory, this.Panel, Point.PointNumber));
         break;
       }
 
       case BGSensorType.LeakSensor :{
-        this.SensorArray.push(new BGLeakSensor(this, Accessory, Point));
+        this.SensorArray.push(new BGLeakSensor(this, Accessory, this.Panel, Point.PointNumber));
         break;
       }
 
       case BGSensorType.SmokeSensor :{
-        this.SensorArray.push(new BGSmokeSensor(this, Accessory, Point));
+        this.SensorArray.push(new BGSmokeSensor(this, Accessory, this.Panel, Point.PointNumber));
         break;
       }
 
       case BGSensorType.COSensor :{
-        this.SensorArray.push(new BGCOSensor(this, Accessory, Point));
+        this.SensorArray.push(new BGCOSensor(this, Accessory, this.Panel, Point.PointNumber));
         break;
       }
     }
@@ -349,7 +447,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.debug('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.debug('Panel Max Doors: ' + this.Panel.MaxDoors);
 
-    this.log.debug('Areas and Points confiigured an active on this Panel:');
+    this.log.debug('Areas, Points and Outputs configured on this Panel:');
 
     for(let i = 0 ; i < this.Panel.AreaArray.length ; i++){
       const Area = this.Panel.AreaArray[i];
@@ -359,6 +457,12 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         const Pointt = Area.PointArray[j];
         this.log.debug('  Point' + Pointt.PointNumber + ': ' + Pointt.PointText);
       }
+    }
+
+    this.log.debug('Outputs:');
+    for(let i = 0 ; i < this.Panel.OutputArray.length ; i++){
+      const Output = this.Panel.OutputArray[i];
+      this.log.debug('  Output' + Output.OutputNumber + ': ' + Output.OutputText);
     }
   }
 }

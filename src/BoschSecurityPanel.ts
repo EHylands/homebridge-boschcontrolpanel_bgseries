@@ -16,7 +16,7 @@ export class BoschSecurityPanel {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Bosch Control Panel')
       .setCharacteristic(this.platform.Characteristic.Model, 'Panel')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, '123456')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPanel' + AreaMonitored)
       .setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
 
     this.service = this.accessory.getService(this.platform.Service.SecuritySystem)
@@ -50,7 +50,6 @@ export class BoschSecurityPanel {
       this.handleSecuritySystemCurrentStateGet();
     }
   }
-
 
   handleSecuritySystemTargetStateGet() {
     const AreaIndex = this.Panel.GetAreaIndex(this.AreaMonitored);

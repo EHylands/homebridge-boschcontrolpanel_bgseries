@@ -37,7 +37,7 @@
           "properties":{
             "AreaNumber":{
               "type": "integer",
-               "title": "Numbera",
+               "title": "Number",
                "required": true
             },
             "CustomText":{
@@ -54,7 +54,33 @@
         }
       }
     },
-      "Points" :{
+    "Outputs":{
+      "required":false,
+      "type": "array",
+      "items":{
+        "title":"Area",
+        "type":"object",
+        "properties":{
+          "OutputNumber":{
+            "type": "integer",
+             "title": "Number",
+             "required": true
+          },
+          "CustomText":{
+            "title":"Custom Output Text",
+            "description": "Keep empty to use output text from control panel",
+            "type": "string",
+            "default": ""
+           },
+          "Active":{
+            "title": "Show Accessory in Home App",
+            "type": "boolean",
+            "default": true
+         }
+      }
+    }
+  },
+    "Points" :{
         "required": false,
          "type": "array",
            "items":{
@@ -134,7 +160,7 @@
       "type": "array",
       "orderable": false,
       "expandable": true,
-      "expanded": true,
+      "expanded": false,
       "buttonText": "Add Area",
       "items": [
         {
@@ -147,7 +173,7 @@
               "displayFlex": true,
               "flex-direction": "row",
               "items": [
-                {"key": "Areas[].Areanumber", "flex": "2 2 25px"},
+                {"key": "Areas[].AreaNumber", "flex": "2 2 25px"},
                 {"key": "Areas[].CustomText", "flex": "8 8 50px"}
               ]
             },
@@ -168,7 +194,7 @@
       "type": "array",
       "title":"Points (Control Panel Sensor)",
       "expandable": true,
-      "expanded": true,
+      "expanded": false,
       "buttonText": "Add Point",
       "items": [
         {
@@ -192,6 +218,40 @@
               "flex-direction": "row",
               "items": [
                 {"key": "Points[].Active", "flex": "2 2 10px"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "Outputs",
+      "type": "array",
+      "orderable": false,
+      "expandable": true,
+      "expanded": false,
+      "buttonText": "Add Output",
+      "items": [
+        {
+          "type": "div",
+          "displayFlex": true,
+          "flex-direction": "column",
+          "items": [
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Outputs[].OutputNumber", "flex": "2 2 25px"},
+                {"key": "Outputs[].CustomText", "flex": "8 8 50px"}
+              ]
+            },
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Outputs[].Active", "flex": "2 2 10px"}
               ]
             }
           ]
