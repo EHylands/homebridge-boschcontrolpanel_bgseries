@@ -194,7 +194,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           OutputText = Output.CustomText;
         }
 
-        const uuid = this.api.hap.uuid.generate('zBGOutput' + this.Panel.PanelType + Output.OutputNumber);
+        const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
         if (existingAccessory) {
           existingAccessory.displayName = OutputText;
@@ -234,7 +234,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           AreaText = Area.CustomText;
         }
 
-        const uuid = this.api.hap.uuid.generate('zBGArea' + this.Panel.PanelType + Area.AreaNumber);
+        const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
         if (existingAccessory) {
           existingAccessory.displayName = AreaText;
@@ -276,7 +276,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         PointText = PointInConfig.CustomText;
       }
 
-      const uuid = this.api.hap.uuid.generate('zBGPoint' + this.Panel.PanelType + PointInConfig.SensorType + PointInPanel.PointNumber);
+      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + PointInConfig.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
