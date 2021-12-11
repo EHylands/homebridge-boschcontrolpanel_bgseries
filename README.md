@@ -71,6 +71,13 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Home | Part On Delay
 
 # Releases
+
+## 0.2.0
+* No changes in configuration file. 
+* Commands sent to controller are now queued. This prevents a race condition where 2 commands would not be executed properly if called simultaneously.
+* More usefull information when run in Debug mode (-D)
+* Fix on Triggered Alarm management and return to normal state once alarm is cleared
+
 ## 0.1.0
 * Accessories universally unique identifier had to be changed. Some accessory automation may have to be reconfigured after upgrading plugin to version 0.1.0
 * Adding panel output support to plugin.
