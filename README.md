@@ -72,7 +72,7 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 
 # Releases
 
-## 0.2.0
+## 0.2.1
 * No changes in configuration file. 
 * Commands sent to controller are now queued. This prevents a race condition where 2 commands would not be executed properly if called simultaneously.
 * More usefull information when run in Debug mode (-D)
