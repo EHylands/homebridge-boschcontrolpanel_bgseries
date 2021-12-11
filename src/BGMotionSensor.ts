@@ -21,8 +21,6 @@ export class BGMotionSensor extends BGSensor {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-    this.service.getCharacteristic(this.platform.Characteristic.MotionDetected)
-      .onGet(this.HandleOnGet.bind(this));
   }
 
   GetService():Service{
@@ -30,12 +28,11 @@ export class BGMotionSensor extends BGSensor {
     || this.accessory.addService(this.platform.Service.MotionSensor);
   }
 
-  HandleOnGet() {
-    const Point = this.Panel.GetPointFromIndex(this.AreaIndex, this.PointIndex);
-    return(Point.PointStatus !== BGPointStatus.Normal);
-  }
+  HandleEventDetected(PointStatus: BGPointStatus){
 
-  HandleEventDetected(EventDetected:boolean){
-    this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, EventDetected);
+    const MotionDetected = PointStatus !== BGPointStatus.Normal;
+    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
+    //'): MotionDectected: ' + MotionDetected );
+    this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, MotionDetected );
   }
 }

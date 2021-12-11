@@ -4,7 +4,6 @@ import { BGController } from './BGController';
 
 export class BGOutputAccessory {
   private service: Service;
-  private OutputIndex:number;
 
   constructor(
     private readonly platform:HB_BoschControlPanel_BGSeries,
@@ -13,8 +12,7 @@ export class BGOutputAccessory {
     readonly OutputNumber: number,
   ) {
 
-    this.OutputIndex = Panel.GetOutputIndex(OutputNumber);
-
+    this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + accessory.displayName);
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'BG Control Panel')
@@ -28,13 +26,7 @@ export class BGOutputAccessory {
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
 
     this.service.getCharacteristic(this.platform.Characteristic.On)
-      .onGet(this.HandleOnGet.bind(this))
       .onSet(this.HandleOnSet.bind(this));
-  }
-
-  HandleOnGet() {
-    const Output = this.Panel.GetOutputFromIndex(this.OutputIndex);
-    return Output.OutputState;
   }
 
   HandleOnSet(value) {

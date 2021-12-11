@@ -1,5 +1,5 @@
-import { Service, PlatformAccessory } from 'homebridge';
-import { BGAreaStatus, BGArmingType, BGController } from './BGController';
+import { Service, PlatformAccessory} from 'homebridge';
+import { BGAreaStatus, BGArmingType, BGController, BGPanelType } from './BGController';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 
 export class BoschSecurityPanel {
@@ -12,34 +12,28 @@ export class BoschSecurityPanel {
     readonly AreaMonitored: number,
   ) {
 
+    this.platform.log.info('Security System: Area' + AreaMonitored + ' - ' + accessory.displayName);
+
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Bosch Control Panel')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Panel')
+      .setCharacteristic(this.platform.Characteristic.Model, BGPanelType[Panel.PanelType])
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPanel' + AreaMonitored)
       .setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
 
     this.service = this.accessory.getService(this.platform.Service.SecuritySystem)
     || this.accessory.addService(this.platform.Service.SecuritySystem);
 
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
-      .onGet(this.handleSecuritySystemCurrentStateGet.bind(this));
-
     this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
-      .onGet(this.handleSecuritySystemTargetStateGet.bind(this))
       .onSet(this.handleSecuritySystemTargetStateSet.bind(this));
   }
 
-  handleSecuritySystemCurrentStateGet() {
-    const AreaIndex = this.Panel.GetAreaIndex(this.AreaMonitored);
-    if(AreaIndex === -1 ){
-      this.platform.log.error('Security Panel Zone ' + this.AreaMonitored + ': Invalid Area number.');
-    }
+  UpdateStateFromPanel(AreaStatus: BGAreaStatus) {
+    const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(AreaStatus);
+    const HKTargetStatus = this.BoschAreaStatusToTargetHomekitSecurityStatus(AreaStatus);
+    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
 
-    const AreaStatus = this.Panel.AreaArray[AreaIndex].AreaStatus;
-    const HKStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(AreaStatus);
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKStatus);
-    return HKStatus;
   }
 
   SetAlarmTriggered(AlarmTrigerred){
@@ -47,20 +41,20 @@ export class BoschSecurityPanel {
       this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
         this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
     } else{
-      this.handleSecuritySystemCurrentStateGet();
+
+      const Area = this.Panel.GetAreaFromNumber(this.AreaMonitored);
+      if(Area){
+        const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(Area.AreaStatus);
+        this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+      } else{
+        this.platform.log.error('Security System: Error reading Area Status');
+      }
     }
   }
 
-  handleSecuritySystemTargetStateGet() {
-    const AreaIndex = this.Panel.GetAreaIndex(this.AreaMonitored);
-
-    if(AreaIndex === -1 ){
-      this.platform.log.error('Security Panel Zone ' + this.AreaMonitored + ': Invalid Area number.');
-    }
-    const AreaStatus = this.Panel.AreaArray[AreaIndex].AreaStatus;
-    const HKStatus = this.BoschAreaStatusToTargetHomekitSecurityStatus(AreaStatus);
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKStatus);
-    return HKStatus;
+  SetFaulted(){
+    // Not Working
+    // this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,new Error(''));
   }
 
   handleSecuritySystemTargetStateSet(value) {
@@ -86,9 +80,6 @@ export class BoschSecurityPanel {
         break;
       }
     }
-
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
-      .updateValue(value);
   }
 
   BoschAreaStatusToCurrentHomekitSecurityStatus(AreaStatus: BGAreaStatus){

@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory } from 'homebridge';
-import { BGController } from './BGController';
+import { BGController, BGPointStatus } from './BGController';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export abstract class BGSensor {
@@ -22,9 +22,20 @@ export abstract class BGSensor {
     const Index = this.Panel.GetPointIndex(PointNumber);
     this.AreaIndex = Index[0];
     this.PointIndex = Index[1];
+
+    if(this.AreaIndex === -1){
+      this.platform.log.error('BG Sensor: Invalid Area Index');
+    }
+
+    if(this.PointIndex === -1){
+      this.platform.log.error('BG Sensor: Invalid Point Index');
+    }
+
+    this.platform.log.info(SensorType + '(' + this.AreaIndex + ',' + this.PointIndex +'): Point'
+    + this.PointNumber + ' - ' + accessory.displayName);
+
   }
 
   abstract GetService(): Service;
-  abstract HandleOnGet();
-  abstract HandleEventDetected(EventDetected:boolean);
+  abstract HandleEventDetected(PointStatus: BGPointStatus);
 }

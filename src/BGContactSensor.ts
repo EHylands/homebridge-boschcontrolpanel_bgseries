@@ -12,7 +12,7 @@ export class BGContactSensor extends BGSensor {
     readonly PointNumber: number,
   ) {
 
-    super(platform, accessory, Panel, PointNumber, BGSensorType.MotionSensor);
+    super(platform, accessory, Panel, PointNumber, BGSensorType.ContactSensor);
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -21,9 +21,6 @@ export class BGContactSensor extends BGSensor {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-
-    this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
-      .onGet(this.HandleOnGet.bind(this));
   }
 
   GetService():Service{
@@ -31,23 +28,19 @@ export class BGContactSensor extends BGSensor {
     || this.accessory.addService(this.platform.Service.ContactSensor);
   }
 
-  HandleOnGet() {
-    const Point = this.Panel.GetPointFromIndex(this.AreaIndex, this.PointIndex);
+  HandleEventDetected(PointStatus: BGPointStatus){
 
-    if(Point.PointStatus !== BGPointStatus.Normal){
-      return this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-    } else{
-      return this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED;
-    }
-  }
+    const ContactDetected = PointStatus === BGPointStatus.Normal;
 
-  HandleEventDetected(EventDetected:boolean){
-    if(EventDetected){
-      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
-        .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
-    } else{
+    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
+    //'): ContactDectected: ' + ContactDetected );
+
+    if(ContactDetected){
       this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
+    } else{
+      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
+        .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
     }
   }
 }

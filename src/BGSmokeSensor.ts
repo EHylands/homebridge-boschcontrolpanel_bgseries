@@ -20,9 +20,6 @@ export class BGSmokeSensor extends BGSensor {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-
-    this.service.getCharacteristic(this.platform.Characteristic.SmokeDetected)
-      .onGet(this.HandleOnGet.bind(this));
   }
 
   GetService():Service{
@@ -30,17 +27,13 @@ export class BGSmokeSensor extends BGSensor {
     || this.accessory.addService(this.platform.Service.SmokeSensor);
   }
 
-  HandleOnGet() {
-    const Point = this.Panel.GetPointFromIndex(this.AreaIndex, this.PointIndex);
-    if(Point.PointStatus !== BGPointStatus.Normal){
-      return this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED;
-    } else{
-      return this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
-    }
-  }
+  HandleEventDetected(PointStatus: BGPointStatus){
+    const SmokeDetected = PointStatus !== BGPointStatus.Normal;
 
-  HandleEventDetected(EventDetected:boolean){
-    if(EventDetected){
+    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
+    //'): SmokeDectected: ' + SmokeDetected );
+
+    if(SmokeDetected){
       this.service.updateCharacteristic(this.platform.Characteristic.SmokeDetected,
         this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED);
     } else{

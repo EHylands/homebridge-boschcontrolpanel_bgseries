@@ -21,9 +21,6 @@ export class BGLeakSensor extends BGSensor {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-
-    this.service.getCharacteristic(this.platform.Characteristic.LeakDetected)
-      .onGet(this.HandleOnGet.bind(this));
   }
 
   GetService():Service{
@@ -31,16 +28,12 @@ export class BGLeakSensor extends BGSensor {
     || this.accessory.addService(this.platform.Service.LeakSensor);
   }
 
-  HandleOnGet() {
-    const Point = this.Panel.GetPointFromIndex(this.AreaIndex, this.PointIndex);
-    if(Point.PointStatus !== BGPointStatus.Normal){
-      return this.platform.Characteristic.LeakDetected.LEAK_DETECTED;
-    } else{
-      return this.platform.Characteristic.LeakDetected.LEAK_NOT_DETECTED;
-    }
-  }
+  HandleEventDetected(PointStatus: BGPointStatus){
+    const LeakDetected = PointStatus !== BGPointStatus.Normal;
 
-  HandleEventDetected(EventDetected:boolean){
-    this.service.updateCharacteristic(this.platform.Characteristic.LeakDetected, EventDetected);
+    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
+    //'): LeakDectected: ' + LeakDetected );
+
+    this.service.updateCharacteristic(this.platform.Characteristic.LeakDetected, LeakDetected);
   }
 }
