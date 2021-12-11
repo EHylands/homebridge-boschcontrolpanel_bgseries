@@ -1,7 +1,7 @@
 {
   "displayName": "Bosch B and G Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Homekit integration for Bosch B and G control panel.",
   "license": "mit",
   "repository": {
