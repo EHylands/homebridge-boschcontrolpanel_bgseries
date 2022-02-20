@@ -24,6 +24,7 @@ export class BoschSecurityPanel {
     this.service = this.accessory.getService(this.platform.Service.SecuritySystem)
     || this.accessory.addService(this.platform.Service.SecuritySystem);
 
+
     this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
       .onSet(this.handleSecuritySystemTargetStateSet.bind(this));
   }

@@ -10,6 +10,7 @@ import { BGSmokeSensor } from './BGSmokeSensor';
 import { BGCOSensor } from './BGCOSensor';
 import { BGSensor } from './BGSensor';
 import { BGOutputAccessory } from './BGOutputAccessory';
+import { BGAlarmSensor } from './BGAlarmSensor';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',
@@ -296,6 +297,25 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     }
   }
 
+  private DiscoverMasterAlarm(){
+
+    if(this.config.MasterFireAlarm){
+      this.CreateMasterAlarm('Fire', 0);
+    }
+
+    if(this.config.MasterGazAlarm){
+      this.CreateMasterAlarm('Gaz', 0);
+    }
+
+    if(this.config.MasterBurglaryAlarm){
+      this.CreateMasterAlarm('Burglary', 0);
+    }
+
+    if(this.config.MasterPersonnalAlarm){
+      this.CreateMasterAlarm('Personnal', 0);
+    }
+  }
+
   private DeviceCacheCleanUp(){
     // Do some cleanup of point that have been restored and are not in config file anymore
     for(let i = 0; i< this.accessories.length;i++){
@@ -323,6 +343,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.DiscoverAreas();
         this.DiscoverPoints();
         this.DiscoverOutputs();
+        this.DiscoverMasterAlarm();
         this.DeviceCacheCleanUp();
         this.InitialRun = false;
       }
@@ -426,6 +447,20 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     // Start panel initialisation
     this.Panel.Connect();
+  }
+
+  private CreateMasterAlarm(MonitoringEvent:string, MonitoringArea:number){
+    const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
+    const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    if (existingAccessory) {
+      new BGAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
+      this.CreatedAccessories.push(existingAccessory);
+    } else{
+      const accessory = new this.api.platformAccessory('Master ' + MonitoringEvent + ' Alarm', uuid);
+      new BGAlarmSensor(this, accessory, this.Panel, MonitoringArea, MonitoringEvent);
+      this.CreatedAccessories.push(accessory);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    }
   }
 
   private CreateSensor(Accessory: PlatformAccessory, Point:BGPoint){
