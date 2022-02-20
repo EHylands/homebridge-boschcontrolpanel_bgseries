@@ -545,7 +545,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x05: // SendTerminateSession;
           if(Response === 0xFC){
-            this.ReadTerminateSession(Data);
+            this.ReadTerminateSession();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'SendTerminateSession: '
@@ -607,7 +607,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x27: // Mode2ArmPanelAreas
           if(Response === 0xFC){
-            this.ReadMode2ArmPanelAreas(Data);
+            this.ReadMode2ArmPanelAreas();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ArmPanelAreas: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -669,7 +669,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x32: // Mode2SetOutputState
           if(Response === 0xFC){
-            this.ReadMode2SetOutputState(Data);
+            this.ReadMode2SetOutputState();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2SetOutputState:' + BGNegativeAcknowledgement[Data[2]]);
@@ -693,7 +693,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x5F: // Mode2SetSubscriptions
           if(Response === 0xFC){
-            this.ReadMode2SetSubscriptions(Data);
+            this.ReadMode2SetSubscriptions();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2SetSubscriptions:'
@@ -740,8 +740,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
           // Event Summary State Entry
           if(StatusItemType === 1){
-            const Priority = Data[++i];
-            const AlarmCount = (Data[++i] << 8) + Data[++i];
+            let Priority = Data[++i];
+            Priority = Priority + 0;
+
+            let AlarmCount = (Data[++i] << 8) + Data[++i];
+            AlarmCount = AlarmCount + 0;
+
             this.SendMode2ReqAreaStatus();
           }
 
@@ -795,16 +799,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           // Panel System status
           if(StatusItemType === 10){
             // got panel status
-            const option = Data[i++];
-            const PStatus = (Data[++i] << 8) + Data[++i];
-            const Event = (Data[++i] << 8) + Data[++i];
+            let option = Data[i++];
+            option = option + 0;
+            let PStatus = (Data[++i] << 8) + Data[++i];
+            PStatus = PStatus + 0;
+            let Event = (Data[++i] << 8) + Data[++i];
+            Event = Event + 0;
           }
 
           // Read extended point status notification
           if(StatusItemType === 12){
             const PointNumber = (Data[++i] << 8) + Data[++i];
             const PointStatus = Data[++i];
-            const AreaNumber = (Data[++i] << 8) + Data[++i];
+            let AreaNumber = (Data[++i] << 8) + Data[++i];
+            AreaNumber = AreaNumber + 0;
             const Bypassable = Data[++i];
             const PointCode = Data[++i];
             const Condition = (Data[++i] << 16) + (Data[++i] << 8) + Data[++i];
@@ -905,7 +913,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
     }
 
-    private ReadTerminateSession(Data: Buffer){
+    private ReadTerminateSession(){
       return;
     }
 
@@ -1356,7 +1364,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Set output state
     // Supported in Protocol Version 2.5
     //
-    private ReadMode2SetOutputState(Data:Buffer){
+    private ReadMode2SetOutputState(){
       return;
     }
 
@@ -1450,7 +1458,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask), true, true);
     }
 
-    ReadMode2ArmPanelAreas(Data:Buffer){
+    ReadMode2ArmPanelAreas(){
       return;
     }
 
@@ -1491,7 +1499,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 5.207
     // Command Format 3
     //
-    private ReadMode2SetSubscriptions(Data: Buffer){
+    private ReadMode2SetSubscriptions(){
       this.PanelReceivingNotifcation = true;
       this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
     }
