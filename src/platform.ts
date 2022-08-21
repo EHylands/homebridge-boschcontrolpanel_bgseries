@@ -182,7 +182,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         continue;
       }
 
-      const uuid = this.api.hap.uuid.generate('zBGOutput' + this.Panel.PanelType + Output.OutputNumber);
+      const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
         this.OutputsArray[Output.OutputNumber] = new BGOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
@@ -215,7 +215,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         }
       }
 
-      const uuid = this.api.hap.uuid.generate('zBGArea' + this.Panel.PanelType + Area.AreaNumber);
+      const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
       if (existingAccessory) {
@@ -243,7 +243,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
       const PointText = PointInPanel.PointText;
 
-      const uuid = this.api.hap.uuid.generate('zBGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
+      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
@@ -443,7 +443,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   private CreateMasterAlarm(MonitoringEvent:string, MonitoringArea:number){
-    const uuid = this.api.hap.uuid.generate('zBGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
+    const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
     if (existingAccessory) {
       new BGAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
