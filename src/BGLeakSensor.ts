@@ -1,6 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { BGSensor } from './BGSensor';
-import { BGController, BGPointStatus } from './BGController';
+import { BGController } from './Controller/BGController';
+import { BGPointStatus} from './Controller/BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class BGLeakSensor extends BGSensor {
@@ -30,10 +31,6 @@ export class BGLeakSensor extends BGSensor {
 
   HandleEventDetected(PointStatus: BGPointStatus){
     const LeakDetected = PointStatus !== BGPointStatus.Normal;
-
-    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
-    //'): LeakDectected: ' + LeakDetected );
-
     this.service.updateCharacteristic(this.platform.Characteristic.LeakDetected, LeakDetected);
   }
 }

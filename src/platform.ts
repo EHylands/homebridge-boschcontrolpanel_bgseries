@@ -1,7 +1,8 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGController, BGPanelType, BGPoint, BGPointStatus, BGUserType, BGAlarmType,
-  BGControllerError, BGAreaStatus } from './BGController';
+import { BGController, BGPanelType, BGUserType, BGControllerError } from './Controller/BGController';
+import {BGPoint, BGPointStatus} from './Controller/BGPoint';
+import { BGAreaStatus, BGAlarmType } from './Controller/BGArea';
 import { BoschSecurityPanel } from './BoschSecurityPanel';
 import { BGMotionSensor } from './BGMotionSensor';
 import { BGContactSensor } from './BGContactSensor';
@@ -27,14 +28,14 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   public accessories: PlatformAccessory[] = [];
   public CreatedAccessories: PlatformAccessory[] = [];
 
-  private SensorArray:BGSensor[] = [];
-  private OutputArray:BGOutputAccessory[] = [];
-  private ControlPanelArray: BoschSecurityPanel[] = [];
-  public Panel: BGController;
-
   private PanelHost = '';
   private PanelPort = 14999;
   private PanelPasscode = '';
+  public readonly Panel: BGController;
+
+  private PointsArray:Record<number, BGSensor> = {};
+  private OutputsArray:Record<number, BGOutputAccessory> = {};
+  private ControlPanelArray: BoschSecurityPanel[] = [];
 
   private InitialRun = true;
   private ReceivingPanelNotification = false;
@@ -45,8 +46,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
 
-    this.log.debug('Finished initializing platform:', this.config.Name);
-
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
       this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode);
@@ -56,7 +55,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode);
 
     this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
       this.discoverDevices();
     });
   }
@@ -91,205 +89,172 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   // Check that outputs exit without any duplicates
   CheckConfigPhase2():boolean{
 
-    let NumberOfPointInConfig = 0;
-    if(this.config.Points !== undefined){
-      NumberOfPointInConfig = this.config.Points.length;
-    }
-
     const TempPoint: number[] = [];
+    const TempArea: number[] = [];
+    const TempOutput: number[] = [];
 
-    for(let i = 0 ; i < NumberOfPointInConfig ; i++){
-      const PointInConfig = this.config.Points[i];
-      const PointInPanel = this.Panel.GetPoint(PointInConfig.PointNumber);
+    // Points
+    for(const Point of this.config.Points){
 
       // Point in config not found in panel;
-      if(PointInPanel === null){
-        this.log.error('Aborting: Point ' + PointInConfig.PointNumber + ' in config file is not configured on the panel');
+      if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
+        this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
         return false;
       }
 
       //Check for duplicate point
-      if(TempPoint.indexOf(PointInConfig.PointNumber) !== -1){
-        this.log.error('Aborting: Dupicate Point ' + PointInConfig.PointNumber + ' in config file');
+      if(TempPoint.indexOf(Point.PointNumber) !== -1){
+        this.log.error('Aborting: Dupicate Point ' + Point.PointNumber + ' in config file');
         return false;
       }
 
-      TempPoint.push(PointInConfig.PointNumber);
+      TempPoint.push(Point.PointNumber);
     }
 
-    let NumberOfAreaInConfig = 0;
-    if(this.config.Areas !== undefined){
-      NumberOfAreaInConfig = this.config.Areas.length;
-    }
+    // Areas
+    for(const Area of this.config.Areas){
 
-    const TempArea: number[] = [];
-
-    for(let i = 0 ; i < NumberOfAreaInConfig ; i++){
-      const AreaInConfig = this.config.Areas[i];
-      const AreaInPanel = this.Panel.GetAreaFromNumber(AreaInConfig.AreaNumber);
-
-      if(AreaInPanel === null){
-        this.log.error('Aborting: Area ' + AreaInConfig.AreaNumber + ' in config file is not configured on the panel');
+      if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
+        this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
         return false;
       }
 
       //Check for duplicate area
-      if(TempArea.indexOf(AreaInConfig.AreaNumber) !== -1){
-        this.log.error('Aborting: Duplicate Area ' + AreaInConfig.AreaNumber + ' in config file');
+      if(TempArea.indexOf(Area.AreaNumber) !== -1){
+        this.log.error('Aborting: Duplicate Area ' + Area.AreaNumber + ' in config file');
         return false;
       }
 
-      TempArea.push(AreaInConfig.AreaNumber);
+      // Check for Area In Scope (coma separated number values)
+      if(Area.AreaInScope === undefined || Area.AreaInScope === ''){
+        continue;
+      } else{
+        const ScopeStringArray = Area.AreaInScope.split(',');
+        const ScopeNumberArray:number[] = [];
+
+        for(let i = 0 ; i < ScopeStringArray.length ; i ++){
+
+          // check for valid numeric area number
+          if(this.Panel.GetAreas()[ScopeStringArray[i]] === undefined){
+            this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (invalid Area argument: \''
+            + ScopeStringArray[i] +'\'');
+            return false;
+          }
+
+          // check for duplicate area
+          if(ScopeNumberArray.indexOf(Number(ScopeStringArray[i])) !== -1){
+            this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (duplicate Area argument: '
+            + ScopeStringArray[i]);
+            return false;
+          }
+          ScopeNumberArray.push(Number(ScopeStringArray[i]));
+        }
+      }
+
+      TempArea.push(Area.AreaNumber);
     }
 
     // Outputs
-    let NumberOfOutputInConfig = 0;
-    if(this.config.Outputs !== undefined){
-      NumberOfOutputInConfig = this.config.Outputs.length;
-    }
+    for(const Output of this.config.Outputs){
 
-    const TempOutput: number[] = [];
-
-    for(let i = 0 ; i < NumberOfOutputInConfig ; i++){
-      const OutputInConfig = this.config.Outputs[i];
-      const OutputInPanel = this.Panel.GetOutput(OutputInConfig.OutputNumber);
-
-      if(OutputInPanel === null){
-        this.log.error('Aborting: Output' + OutputInConfig.OutputNumber + ' in config file is not configured on the panel');
+      if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
+        this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
         return false;
       }
 
       //Check for duplicate output
-      if(TempOutput.indexOf(OutputInConfig.OutputNumber) !== -1){
-        this.log.error('Aborting: Duplicate Output' + OutputInConfig.OutputNumber + ' in config file');
+      if(TempOutput.indexOf(Output.OutputNumber) !== -1){
+        this.log.error('Aborting: Duplicate Output' + Output.OutputNumber + ' in config file');
         return false;
       }
 
-      TempArea.push(OutputInConfig.OutputNumber);
+      TempOutput.push(Output.OutputNumber);
     }
+
     return true;
   }
 
   private DiscoverOutputs(){
 
-    if(this.config.Outputs !== undefined){
-      for(let i = 0 ; i < this.config.Outputs.length;i++){
+    for(const Output of this.config.Outputs){
 
-        const Output = this.config.Outputs[i];
-        const Active = Output.Active;
-        const OutputNumber = Output.OutputNumber;
-        const PanelOutput = this.Panel.GetOutput(OutputNumber);
+      if(!Output.Active){
+        continue;
+      }
 
-        if(!Active){
-          // Do not add accessory
-          continue;
-        }
-
-        if(PanelOutput === null){
-          this.log.error('Output' + OutputNumber + ' in the config file is not configured on the panel');
-          continue;
-        }
-
-        let OutputText = PanelOutput.OutputText;
-        if(Output.CustomText !== undefined && Output.CustomText !== ''){
-          OutputText = Output.CustomText;
-        }
-
-        const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
-        const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-        if (existingAccessory) {
-          existingAccessory.displayName = OutputText;
-          this.OutputArray.push(new BGOutputAccessory(this, existingAccessory, this.Panel, OutputNumber));
-          this.CreatedAccessories.push(existingAccessory);
-          //this.api.updatePlatformAccessories([existingAccessory]);
-        } else{
-          const accessory = new this.api.platformAccessory(OutputText, uuid);
-          this.OutputArray.push(new BGOutputAccessory(this, accessory, this.Panel, OutputNumber));
-          this.CreatedAccessories.push(accessory);
-          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-        }
+      const uuid = this.api.hap.uuid.generate('zBGOutput' + this.Panel.PanelType + Output.OutputNumber);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+      if (existingAccessory) {
+        this.OutputsArray[Output.OutputNumber] = new BGOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
+        this.CreatedAccessories.push(existingAccessory);
+      } else{
+        const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
+        const OutputText = PanelOutput.OutputText;
+        const accessory = new this.api.platformAccessory(OutputText, uuid);
+        this.OutputsArray[Output.OutputNumber] = new BGOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
+        this.CreatedAccessories.push(accessory);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
     }
   }
 
   private DiscoverAreas(){
-    if(this.config.Areas !== undefined){
-      for(let i = 0 ; i < this.config.Areas.length;i++){
 
-        const Area = this.config.Areas[i];
-        const Active = Area.Active;
-        const AreaNumber = Area.AreaNumber;
-        const PanelArea = this.Panel.GetAreaFromNumber(AreaNumber);
+    for(const Area of this.config.Areas){
+      const AreaInScope:number[] = [];
+      const PasscodeFollowsScope = Area.PasscodeFollowsScope;
 
-        if(PanelArea === null){
-          this.log.error('Area ' + AreaNumber + ' in the config file is not configured on the panel');
-          continue;
+      if(!Area.Active){
+        continue;
+      }
+
+      if(Area.AreaInScope !== undefined && Area.AreaInScope !== ''){
+        const ScopeStringArray = Area.AreaInScope.split(',');
+        for(let i = 0 ; i < ScopeStringArray.length ; i ++){
+          AreaInScope.push(Number(ScopeStringArray[i]));
         }
+      }
 
-        if(!Active){
-          continue;
-        }
+      const uuid = this.api.hap.uuid.generate('zBGArea' + this.Panel.PanelType + Area.AreaNumber);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
-        let AreaText = PanelArea.AreaText;
-        if(Area.CustomText !== undefined && Area.CustomText !== ''){
-          AreaText = Area.CustomText;
-        }
-
-        const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
-        const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-        if (existingAccessory) {
-          existingAccessory.displayName = AreaText;
-          this.ControlPanelArray.push(new BoschSecurityPanel(this, existingAccessory, this.Panel, AreaNumber));
-          this.CreatedAccessories.push(existingAccessory);
-        } else{
-          const accessory = new this.api.platformAccessory(AreaText, uuid);
-          this.ControlPanelArray.push(new BoschSecurityPanel(this, accessory, this.Panel, AreaNumber));
-          this.CreatedAccessories.push(accessory);
-          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-        }
+      if (existingAccessory) {
+        this.ControlPanelArray.push(new BoschSecurityPanel(this, existingAccessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
+        this.CreatedAccessories.push(existingAccessory);
+      } else{
+        const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
+        const AreaText = PanelArea.AreaText;
+        const accessory = new this.api.platformAccessory(AreaText, uuid);
+        this.ControlPanelArray.push(new BoschSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
+        this.CreatedAccessories.push(accessory);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
     }
   }
 
   private DiscoverPoints(){
 
-    let NumberOfPointInConfig = 0;
-    if(this.config.Points !== undefined){
-      NumberOfPointInConfig = this.config.Points.length;
-    }
+    for(const Point of this.config.Points){
 
-    for(let i = 0 ; i < NumberOfPointInConfig ; i++){
-      const PointInConfig = this.config.Points[i];
-      const PointInPanel = this.Panel.GetPoint(PointInConfig.PointNumber);
-      const Active = PointInConfig.Active;
-
-      if(PointInPanel === null){
-        this.log.error('Point ' + PointInConfig.PointNumber + ' in the config file is not configured on the panel');
+      if(!Point.Active){
         continue;
       }
 
-      if(!Active){
-        continue;
-      }
+      const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
+      const PointText = PointInPanel.PointText;
 
-      let PointText = PointInPanel.PointText;
-      if(PointInConfig.CustonText !== '' && PointInConfig.CustomText !== undefined){
-        PointText = PointInConfig.CustomText;
-      }
-
-      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + PointInConfig.SensorType + PointInPanel.PointNumber);
+      const uuid = this.api.hap.uuid.generate('zBGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
-        existingAccessory.context.SensorType = PointInConfig.SensorType;
-        existingAccessory.context.PointNumber = PointInConfig.PointNumber;
-        existingAccessory.displayName = PointText;
+        existingAccessory.context.SensorType = Point.SensorType;
+        existingAccessory.context.PointNumber = Point.PointNumber;
         this.CreateSensor(existingAccessory, PointInPanel);
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const accessory = new this.api.platformAccessory(PointText, uuid);
-        accessory.context.SensorType = PointInConfig.SensorType;
-        accessory.context.PointNumber = PointInConfig.PointNumber;
+        accessory.context.SensorType = Point.SensorType;
+        accessory.context.PointNumber = Point.PointNumber;
         this.CreateSensor(accessory, PointInPanel);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         this.CreatedAccessories.push(accessory);
@@ -361,66 +326,94 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
     });
 
-    // Set notification management for sensor status change
     this.Panel.on('PointStatusChange', (Point) => {
-      this.log.debug('Panel: Point' + Point.PointNumber + '(' + Point.PointText + '): ' + BGPointStatus[Point.PointStatus]);
+      const message = 'Panel: Point' + Point.PointNumber + '(' + Point.PointText + '): ' + BGPointStatus[Point.PointStatus];
+      if(this.config.LogPoint){
+        this.log.info(message);
+      } else{
+        this.log.debug(message);
+      }
 
-      for(let i = 0 ; i < this.SensorArray.length ; i++){
-        const Sensor = this.SensorArray[i];
-        if(Sensor.PointNumber === Point.PointNumber){
-          Sensor.HandleEventDetected(Point.PointStatus);
-        }
+      if(this.PointsArray[Point.PointNumber] !== undefined){
+        this.PointsArray[Point.PointNumber].HandleEventDetected(Point.PointStatus);
+      }
+    });
+
+    this.Panel.on('OutputStateChange', (Output)=>{
+      const message = 'Panel: Output' + Output.OutputNumber + '(' + Output.OutputText + '): ' + Output.OutputState;
+      if(this.config.LogOutput){
+        this.log.info(message);
+      } else{
+        this.log.debug(message);
+      }
+
+      if(this.OutputsArray[Output.OutputNumber] !== undefined){
+        this.OutputsArray[Output.OutputNumber].HandleOutputChange(Output.OutputState);
       }
     });
 
     this.Panel.on('AreaAlarmStateChange', (Area)=>{
 
       if(Area.GetIsAlarmNominal()){
-        this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): AlarmState: ' + BGAlarmType[Area.FireAlarm] );
+        const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): AlarmState: ' + BGAlarmType[Area.FireAlarm];
+        if(this.config.LogAreaAlarm){
+          this.log.info(message);
+        } else{
+          this.log.debug(message);
+        }
       } else{
         if(Area.FireAlarm !== BGAlarmType.Normal){
-          this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): FireAlarm: ' + BGAlarmType[Area.FireAlarm] );
+          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): FireAlarm: ' + BGAlarmType[Area.FireAlarm];
+          if(this.config.LogAreaAlarm){
+            this.log.info(message);
+          } else{
+            this.log.debug(message);
+          }
         }
         if(Area.BurglaryAlarm !== BGAlarmType.Normal){
-          this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): BurglaryAlarm: ' + BGAlarmType[Area.FireAlarm] );
+          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): BurglaryAlarm: ' + BGAlarmType[Area.BurglaryAlarm];
+          if(this.config.LogAreaAlarm){
+            this.log.info(message);
+          } else{
+            this.log.debug(message);
+          }
         }
         if(Area.GazAlarm !== BGAlarmType.Normal){
-          this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): GazAlarm: ' + BGAlarmType[Area.FireAlarm] );
+          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): GazAlarm: ' + BGAlarmType[Area.GazAlarm];
+          if(this.config.LogAreaAlarm){
+            this.log.info(message);
+          } else{
+            this.log.debug(message);
+          }
         }
         if(Area.PersonnalAlarm !== BGAlarmType.Normal){
-          this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): PersonnalAlarm: ' + BGAlarmType[Area.FireAlarm] );
-        }
-      }
-
-      for(let i = 0 ; i < this.ControlPanelArray.length ; i++){
-        const Panel = this.ControlPanelArray[i];
-        if(Panel.AreaMonitored === Area.AreaNumber){
-          Panel.SetAlarmTriggered(Area.GetAlarmDetected());
+          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): PersonnalAlarm: ' + BGAlarmType[Area.PersonnalAlarm];
+          if(this.config.LogAreaAlarm){
+            this.log.info(message);
+          } else{
+            this.log.debug(message);
+          }
         }
       }
     });
 
     // Set notification management for Confidence messages sent by panel
     this.Panel.on('ConfidenceMessage', () => {
-      this.log.debug('Panel: Received Confidence Message');
+      const message = 'Panel: Received Confidence Message';
+      if(this.config.LogConfidenceMessage){
+        this.log.info(message);
+      } else{
+        this.log.debug(message);
+      }
       this.ReceivingPanelNotification = true;
     });
 
     this.Panel.on('AreaOnOffStateChange', (Area)=>{
-      this.log.info('Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): ' + BGAreaStatus[Area.AreaStatus]);
-      for(let i = 0; i < this.ControlPanelArray.length ; i++){
-        if(this.ControlPanelArray[i].AreaMonitored === Area.AreaNumber){
-          this.ControlPanelArray[i].UpdateStateFromPanel(Area.AreaStatus);
-        }
-      }
-    });
-
-    this.Panel.on('OutputStateChange', (Output)=>{
-      this.log.info('Panel: Output' + Output.OutputNumber + '(' + Output.OutputText + '): ' + Output.OutputState);
-      for(let i = 0 ; i < this.OutputArray.length;i ++){
-        if(Output.OutputNumber === this.OutputArray[i].OutputNumber){
-          this.OutputArray[i].HandleOutputChange(Output.OutputState);
-        }
+      const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): ' + BGAreaStatus[Area.AreaStatus];
+      if(this.config.LogAreaArmingStatus){
+        this.log.info(message);
+      } else{
+        this.log.debug(message);
       }
     });
 
@@ -450,7 +443,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   private CreateMasterAlarm(MonitoringEvent:string, MonitoringArea:number){
-    const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
+    const uuid = this.api.hap.uuid.generate('zBGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
     if (existingAccessory) {
       new BGAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
@@ -468,27 +461,27 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     switch(Accessory.context.SensorType){
 
       case BGSensorType.MotionSensor:{
-        this.SensorArray.push(new BGMotionSensor(this, Accessory, this.Panel, Point.PointNumber));
+        this.PointsArray[Point.PointNumber] = new BGMotionSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.ContactSensor:{
-        this.SensorArray.push(new BGContactSensor(this, Accessory, this.Panel, Point.PointNumber));
+        this.PointsArray[Point.PointNumber] =new BGContactSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.LeakSensor :{
-        this.SensorArray.push(new BGLeakSensor(this, Accessory, this.Panel, Point.PointNumber));
+        this.PointsArray[Point.PointNumber] = new BGLeakSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.SmokeSensor :{
-        this.SensorArray.push(new BGSmokeSensor(this, Accessory, this.Panel, Point.PointNumber));
+        this.PointsArray[Point.PointNumber] = new BGSmokeSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.COSensor :{
-        this.SensorArray.push(new BGCOSensor(this, Accessory, this.Panel, Point.PointNumber));
+        this.PointsArray[Point.PointNumber] = new BGCOSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
     }
@@ -509,20 +502,22 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.info('Panel Max Doors: ' + this.Panel.MaxDoors);
 
-    for(let i = 0 ; i < this.Panel.AreaArray.length ; i++){
-      const Area = this.Panel.AreaArray[i];
+    for (const AreaNumber in this.Panel.GetAreas()){
+      const Area = this.Panel.GetAreas()[AreaNumber];
       this.log.info('Area' + Area.AreaNumber + ': ' + Area.AreaText);
 
-      for(let j = 0 ; j < Area.PointArray.length ; j++){
-        const Pointt = Area.PointArray[j];
-        this.log.info('  Point' + Pointt.PointNumber + ': ' + Pointt.PointText);
+      for(const PointNumber in this.Panel.GetPoints()){
+        const Point = this.Panel.GetPoints()[PointNumber];
+        if(Point.AreaNumber === Area.AreaNumber){
+          this.log.info('  Point' + Point.PointNumber + ': ' + Point.PointText);
+        }
       }
     }
 
-    this.log.info('Outputs:');
-    for(let i = 0 ; i < this.Panel.OutputArray.length ; i++){
-      const Output = this.Panel.OutputArray[i];
-      this.log.info('  Output' + Output.OutputNumber + ': ' + Output.OutputText);
+    for (const OutputNumber in this.Panel.GetOutputs()){
+      const Output = this.Panel.GetOutputs()[OutputNumber];
+      this.log.info('Output' + Output.OutputNumber + ': ' + Output.OutputText);
     }
   }
+
 }

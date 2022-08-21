@@ -1,6 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { BGSensor } from './BGSensor';
-import { BGController, BGPointStatus } from './BGController';
+import { BGController} from './Controller/BGController';
+import { BGPointStatus} from './Controller/BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class BGCOSensor extends BGSensor {
@@ -30,10 +31,6 @@ export class BGCOSensor extends BGSensor {
   HandleEventDetected(PointStatus: BGPointStatus){
 
     const CODetected = PointStatus !== BGPointStatus.Normal;
-
-    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
-    //'): CPDectected: ' + CODetected );
-
     this.service.updateCharacteristic(this.platform.Characteristic.CarbonMonoxideDetected, CODetected );
   }
 }

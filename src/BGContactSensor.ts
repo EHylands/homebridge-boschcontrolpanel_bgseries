@@ -1,6 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { BGSensor } from './BGSensor';
-import { BGController, BGPointStatus } from './BGController';
+import { BGController} from './Controller/BGController';
+import { BGPointStatus} from './Controller/BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class BGContactSensor extends BGSensor {

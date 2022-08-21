@@ -1,5 +1,9 @@
-import tls = require('tls');
+import { BGPoint } from './BGpoint';
+import { BGOutput } from './BGOutput';
+import { BGArmingType, BGArea } from './BGArea';
+import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
+import tls = require('tls');
 import net = require('net');
 
 enum BGNegativeAcknowledgement {
@@ -99,47 +103,6 @@ enum MaxConnectionsInUseFlags {
   MaxRPSAlinkusersInUse = 0x01
 }
 
-class BGProtocolVersion{
-  ProtocolVersionMajor: number;
-  ProtocolVersionMinor: number;
-  ProtocolVersionMicro: number;
-
-  constructor(Major:number, Minor:number, Micro: number){
-    this.ProtocolVersionMajor = Major;
-    this.ProtocolVersionMinor = Minor;
-    this.ProtocolVersionMicro = Micro;
-  }
-
-  toSring(){
-    return this.ProtocolVersionMajor + '.' + this.ProtocolVersionMinor + '.' + this.ProtocolVersionMicro;
-  }
-}
-
-export enum BGAreaStatus{
-  Unknown = 0x00,
-  AllOn = 0x01,
-  PartOnInstant = 0x02,
-  PartOnDelay = 0x03,
-  Disarmed = 0x04,
-  AllOnEntryDelay = 0x05,
-  PartOnEntryDelay = 0x06,
-  AllOnExitDelay = 0x07,
-  PartOnExitDelay = 0x08,
-  AllOnInstantArmed = 0x09,
-}
-
-export enum BGArmingType{
-  Disarm = 0x01,
-  MasterInstantArm = 0x02,
-  MasterDelayArm = 0x03,
-  PerimeterInstantArm = 0x04,
-  PerimeterDelayArm = 0x05,
-  ForceMasterDelay = 0x06,
-  ForceMasterInstantArm = 0x07,
-  ForcePerimeterDelayArm = 0x08,
-  ForcePerimeterInstantArm = 0x09
-}
-
 export enum BGAlarmPriority{
   BurgTrouble = 1,
   BurgSupervisory = 2,
@@ -161,194 +124,11 @@ export enum BGAlarmPriority{
   TechnicalGasFault =19
 }
 
-export enum BGAlarmType{
-  Normal,
-  Supervisory,
-  Trouble,
-  Alarm,
-  Unkown
-}
-
-export class BGArea{
-  AreaNumber: number;
-  AreaText = '';
-  PointArray: BGPoint[] = [];
-
-  AreaStatus = BGAreaStatus.Unknown;
-  ReadyToBecomeAllOn = false;
-  ReadyToBecomePartOn = false;
-  FaultNumber = 0;
-
-  FireAlarm = BGAlarmType.Unkown;
-  GazAlarm = BGAlarmType.Unkown;
-  PersonnalAlarm = BGAlarmType.Unkown;
-  BurglaryAlarm = BGAlarmType.Unkown;
-
-  constructor(AreaNumber: number){
-    this.AreaNumber = AreaNumber;
-  }
-
-  SetAreaStatus(AreaStatus: BGAreaStatus){
-    this.AreaStatus = AreaStatus;
-  }
-
-  SetAreaReadyState(ReadyToBecomeAllOn: boolean, ReadyToBecomePartOn: boolean, FaultNumber: number ){
-    this.ReadyToBecomeAllOn = ReadyToBecomeAllOn;
-    this.ReadyToBecomePartOn = ReadyToBecomePartOn;
-    this.FaultNumber = FaultNumber;
-  }
-
-  GetAlarmDetected():boolean{
-    if(this.FireAlarm === BGAlarmType.Alarm ||
-      this.GazAlarm === BGAlarmType.Alarm ||
-      this.PersonnalAlarm === BGAlarmType.Alarm ||
-      this.BurglaryAlarm === BGAlarmType.Alarm ){
-      return true;
-    }
-    return false;
-  }
-
-  GetIsAlarmNominal():boolean{
-    if(this.FireAlarm === BGAlarmType.Normal &&
-      this.GazAlarm === BGAlarmType.Normal &&
-      this.PersonnalAlarm === BGAlarmType.Normal &&
-      this.BurglaryAlarm === BGAlarmType.Normal ){
-      return true;
-    }
-    return false;
-  }
-
-  ClearAlarm(){
-    this.FireAlarm = BGAlarmType.Normal;
-    this.GazAlarm = BGAlarmType.Normal;
-    this.PersonnalAlarm= BGAlarmType.Normal;
-    this.BurglaryAlarm = BGAlarmType.Normal;
-  }
-
-  private SetFireAlarm(AlarmAnnunciationPriority: number){
-    if(AlarmAnnunciationPriority & 0x0200){
-      this.FireAlarm = BGAlarmType.Alarm;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0020){
-      this.FireAlarm = BGAlarmType.Supervisory;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0010){
-      this.FireAlarm = BGAlarmType.Trouble;
-      return;
-    }
-
-    this.FireAlarm = BGAlarmType.Normal;
-  }
-
-  private SetGazAlarm(AlarmAnnunciationPriority: number){
-    if(AlarmAnnunciationPriority & 0x0100){
-      this.GazAlarm = BGAlarmType.Alarm;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0008){
-      this.GazAlarm = BGAlarmType.Supervisory;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0004){
-      this.GazAlarm = BGAlarmType.Trouble;
-      return;
-    }
-
-    this.GazAlarm = BGAlarmType.Normal;
-  }
-
-  private SetPersonnalAlarm(AlarmAnnunciationPriority: number){
-    if(AlarmAnnunciationPriority & 0x0080){
-      this.PersonnalAlarm = BGAlarmType.Alarm;
-      return;
-    }
-
-    this.PersonnalAlarm = BGAlarmType.Normal;
-  }
-
-  private SetBurglaryAlarm(AlarmAnnunciationPriority: number){
-    if(AlarmAnnunciationPriority & 0x0040){
-      this.BurglaryAlarm = BGAlarmType.Alarm;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0002){
-      this.BurglaryAlarm = BGAlarmType.Supervisory;
-      return;
-    }
-
-    if(AlarmAnnunciationPriority & 0x0001){
-      this.BurglaryAlarm = BGAlarmType.Trouble;
-      return;
-    }
-
-    this.BurglaryAlarm = BGAlarmType.Normal;
-  }
-
-  SetAlarm(AlarmAnnunciationPriority: number){
-    if(AlarmAnnunciationPriority === 0){
-      this.ClearAlarm();
-    } else{
-      this.SetFireAlarm(AlarmAnnunciationPriority);
-      this.SetGazAlarm(AlarmAnnunciationPriority);
-      this.SetPersonnalAlarm(AlarmAnnunciationPriority);
-      this.SetBurglaryAlarm(AlarmAnnunciationPriority);
-    }
-  }
-}
-
-export enum BGPointStatus {
-  Unassigned = 0x00,
-  Short = 0x01,
-  Open = 0x02,
-  Normal = 0x03,
-  Missing = 0x04,
-  Resistor2 = 0x05,
-  Resistor4 = 0x06,
-  Unknown = 0xFF
-}
-
-export class BGPoint{
-  PointNumber: number;
-  PointText = '';
-  PointStatus = BGPointStatus.Unknown;
-  Bypassable = false;
-  PointCode = 0;
-  PointCondition = 0;
-
-  constructor(PointNumber: number){
-    this.PointNumber = PointNumber;
-  }
-
-  UpdatePoint(PointStatus: BGPointStatus, Bypassable: boolean, PointCode: number, PointCondition: number){
-    this.PointStatus = PointStatus;
-    this.Bypassable = Bypassable;
-    this.PointCode = PointCode;
-    this.PointCondition = PointCondition;
-  }
-}
-
-export class BGOutput{
-  OutputNumber = 0;
-  OutputText = '';
-  OutputState = false;
-
-  constructor(OutputNumber: number){
-    this.OutputNumber = OutputNumber;
-  }
-}
-
 export interface BoschControllerMode2Event {
   'PanelReadyForOperation': (PanelReady: boolean) => void;
   'PanelReceivingNotifiation': (PanelReceivingNotification:boolean) => void;
   'ControllerError': (Error: BGControllerError, ErrorString: string) => void;
-  'PointStatusChange': (Point: BGPoint, Area: BGArea) => void;
+  'PointStatusChange': (Point: BGPoint) => void;
   'AreaReadyStateChange':(Area: BGArea) => void;
   'AreaOnOffStateChange':(Area: BGArea) => void;
   'AreaAlarmStateChange':(Area: BGArea) => void;
@@ -357,30 +137,25 @@ export interface BoschControllerMode2Event {
 }
 
 export class BGController extends TypedEmitter<BoschControllerMode2Event> {
-    // For internal use
-    private AreaReadingIndex = 0;
     Util = require('util');
 
-    Host: string;
-    Port: number;
-    SecureSocket: tls.TLSSocket;
-    Socket: net.Socket;
+    private Host: string;
+    private Port: number;
+    private SecureSocket: tls.TLSSocket;
+    private Socket: net.Socket;
+    private SocktetTimeout = 180000;
 
-    UserType: BGUserType;
-    Passcode: string;
-    MinPasscodeLength = 6;
-    MaxPassCodeLength = 24;
+    private UserType: BGUserType;
+    private Passcode: string;
+    private MinPasscodeLength = 6;
+    private MaxPassCodeLength = 24;
 
-    // Protocol related variables
-    readonly ControllerMaxAreas = 128;
-    readonly ControllerMaxPointInArea = 600;
-    readonly ControllerMaxOutput = 600;
-    readonly ControllerMaxCommandBytes = 236;
-    readonly ControllerMaxNotificationMessageBytes = 480;
-    readonly EP1 = new Uint8Array([0x01]); // Expected Protocol 0x01
-    readonly EP2 = new Uint8Array([0x02]); // Expected Protocol 0x02
-    readonly FE = new Uint8Array([0xFE]);  // FE response
-    readonly FC = new Uint8Array([0xFC]);  // FC response
+    // Bosch Protocol related variables
+    readonly BoschMaxAreas = 128;
+    readonly BoschMaxPointInArea = 600;
+    readonly BoschMaxOutput = 600;
+    readonly BoschMaxCommandBytes = 236;
+    readonly BoschMaxNotificationMessageBytes = 480;
 
     // Mininum protocol supported version
     readonly MinimumIntrusionIntegrationProtocolVersion = new BGProtocolVersion(5, 208, 0);
@@ -399,11 +174,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     MaxDoors= 0;
 
     // Protocol 0x01 Command Queue variables
-    ProtocolCommandQueue_0x01:Uint8Array[] = [];
-    WaitingProtocolResponse_0x01 = false;
+    private ProtocolCommandQueue_0x01:Uint8Array[] = [];
+    private WaitingProtocolResponse_0x01 = false;
 
-    AreaArray: BGArea[] = [];
-    OutputArray: BGOutput[] = [];
+    private Areas:Record<number, BGArea> = {};
+    private Outputs:Record<number, BGOutput> = {};
+    private Points:Record<number, BGPoint> = {};
 
     private PanelReadyForOperation = false;
     private PanelReceivingNotifcation = false;
@@ -419,14 +195,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     Connect(){
-      this.AreaArray = [];
-      this.OutputArray =[];
+      this.Outputs = {};
+      this.Areas = {};
+      this.Points = {};
 
       this.PanelReadyForOperation = false;
       this.PanelReceivingNotifcation = false;
 
       this.Socket = new net.Socket();
-      this.Socket.setTimeout(180000); // 3 min , should get confidence message from panel every 2 min
+      this.Socket.setTimeout(this.SocktetTimeout);
       this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
 
       this.Socket.on('timeout', ()=>{
@@ -449,8 +226,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         const Protocol = data[0];
         const Data = data.slice(1, data.length);
 
-        //console.log(Data);
-
         switch(Protocol){
           case 0x01:{
             this.ReadProtocolMessage_0x01(Data);
@@ -464,12 +239,31 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         }
       });
 
+      // Initial connection to Panel
       this.Socket.connect(this.Port, this.Host, () => {
         this.SendMode2WhatAreYou();
       });
     }
 
-    private QueueProtocolCommand_0x01(Command:Uint8Array, Priority:boolean, AllowDuplicate:boolean){
+    GetAreas(){
+      return this.Areas;
+    }
+
+    GetPoints(){
+      return this.Points;
+    }
+
+    GetOutputs(){
+      return this.Outputs;
+    }
+
+    SetOutputState(OutputNumer: number, State:boolean){
+      this.SendMode2SetOutputState(OutputNumer, State);
+      return;
+    }
+
+
+    private QueueProtocolCommand_0x01(Command:Uint8Array, AllowDuplicate:boolean){
 
       if(!AllowDuplicate){
         for(let i = 0 ; i < this.ProtocolCommandQueue_0x01.length ; i ++){
@@ -489,11 +283,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         }
       }
 
-      if(Priority){
-        this.ProtocolCommandQueue_0x01.unshift(Command);
-      } else{
-        this.ProtocolCommandQueue_0x01.push(Command);
-      }
+      this.ProtocolCommandQueue_0x01.push(Command);
 
       if(!this.WaitingProtocolResponse_0x01){
         this.SendProtocolCommand_0x01();
@@ -514,12 +304,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private ReadProtocolMessage_0x01(Data: Buffer){
 
       const LastCommand = this.ProtocolCommandQueue_0x01[0][2];
+      const LastQueue = this.ProtocolCommandQueue_0x01[0];
       const Response = Data[1];
 
       // Clear Command Queue
       this.ProtocolCommandQueue_0x01.shift();
 
-      if(Data.length < 2 || Data.length > this.ControllerMaxCommandBytes){
+      if(Data.length < 2 || Data.length > this.BoschMaxCommandBytes){
         this.emit('ControllerError', BGControllerError.ResponseLengthOverflow, '');
         return;
       }
@@ -571,6 +362,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x1F: // Mode2Capacitie
           if(Response === 0xFE){
             this.ReadMode2ReqPanelCapacitie(Data);
+            this.SendMode2ReqConfiguredAreas();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2Capacitie: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -583,6 +375,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x24: // PanelConfiguredAreas
           if(Response === 0xFE){
             this.ReadMode2ReqConfiguredAreas(Data);
+            this.SendMode2ReqPointsInArea();
+            this.SendMode2ReqConfiguredOutputs();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'PanelConfiguredAreas: '
@@ -631,7 +425,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x36: // GetPanelMode2ReqPointsInArea
           if(Response === 0xFE){
-            this.ReadMode2ReqPointsInArea(Data);
+            this.ReadMode2ReqPointsInArea(Data, LastQueue[4]);
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'GetPanelMode2ReqPointsInArea: '
@@ -657,6 +451,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x30: // Mode2ReqConfiguredOutputs
           if(Response === 0xFE){
             this.ReadMode2ReqConfiguredOutputs(Data);
+            this.SendMode2ReqAreaText(0);
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqConfiguredOutputs: '
@@ -712,7 +507,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     private ReadProtocolMessage_0x02(Data: Buffer){
 
-      if(Data.length < 2 || Data.length > (this.ControllerMaxNotificationMessageBytes - 2)){
+      if(Data.length < 2 || Data.length > (this.BoschMaxNotificationMessageBytes - 2)){
         this.emit('ControllerError', BGControllerError.NotificationLengthOverflow, Data.toString());
         return;
       }
@@ -742,10 +537,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           if(StatusItemType === 1){
             let Priority = Data[++i];
             Priority = Priority + 0;
-
             let AlarmCount = (Data[++i] << 8) + Data[++i];
             AlarmCount = AlarmCount + 0;
-
             this.SendMode2ReqAreaStatus();
           }
 
@@ -753,9 +546,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           if(StatusItemType === 4){
             const AreaNumber = (Data[++i] << 8) + Data[++i];
             const AreaStatus = Data[++i];
-            const AreaIndex = this.GetAreaIndex(AreaNumber);
-            this.AreaArray[AreaIndex].SetAreaStatus(AreaStatus);
-            this.emit('AreaOnOffStateChange', this.AreaArray[AreaIndex]);
+            const Area = this.Areas[AreaNumber];
+            Area.SetAreaStatus(AreaStatus);
+            this.emit('AreaOnOffStateChange', Area);
           }
 
           // Area ready state
@@ -764,20 +557,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             const AreaReadyState = Data[++i];
             const Fault = (Data[++i] << 8) + Data[++i];
 
-            const AreaIndex = this.GetAreaIndex(AreaNumber);
+            const Area = this.Areas[AreaNumber];
             if(AreaReadyState === 0){
-              this.AreaArray[AreaIndex].SetAreaReadyState(false, false, Fault);
+              Area.SetAreaReadyState(false, false, Fault);
             }
 
             if(AreaReadyState === 1){
-              this.AreaArray[AreaIndex].SetAreaReadyState(false, true, Fault);
+              Area.SetAreaReadyState(false, true, Fault);
             }
 
             if(AreaReadyState === 2){
-              this.AreaArray[AreaIndex].SetAreaReadyState(true, true, Fault);
+              Area.SetAreaReadyState(true, true, Fault);
             }
 
-            this.emit('AreaReadyStateChange', this.AreaArray[AreaIndex]);
+            this.emit('AreaReadyStateChange', Area);
           }
 
           // Output state
@@ -785,20 +578,17 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             const OutputNumber = (Data[++i] << 8) + Data[++i];
             const OutputPatern = Data[++i];
 
-            const Output = this.GetOutput(OutputNumber);
-            if(Output !== null){
-              if(OutputPatern === 0){
-                Output.OutputState = false;
-              } else{
-                Output.OutputState = true;
-              }
-              this.emit('OutputStateChange', Output);
+            const Output = this.Outputs[OutputNumber];
+            if(OutputPatern === 0){
+              Output.OutputState = false;
+            } else{
+              Output.OutputState = true;
             }
+            this.emit('OutputStateChange', Output);
           }
 
           // Panel System status
           if(StatusItemType === 10){
-            // got panel status
             let option = Data[i++];
             option = option + 0;
             let PStatus = (Data[++i] << 8) + Data[++i];
@@ -817,91 +607,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             const PointCode = Data[++i];
             const Condition = (Data[++i] << 16) + (Data[++i] << 8) + Data[++i];
 
-            const Index = this.GetPointIndex(PointNumber);
-            const Point = this.AreaArray[Index[0]].PointArray[Index[1]];
+            const Point = this.Points[PointNumber];
             Point.UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
-            this.emit('PointStatusChange', Point, this.AreaArray[Index[0]]);
+            this.emit('PointStatusChange', Point);
           }
         }
       }
-      return;
-    }
-
-    GetAreaFromNumber(Areanumber: number){
-      for(let i = 0 ; i < this.AreaArray.length ; i++){
-        if(this.AreaArray[i].AreaNumber === Areanumber){
-          return this.AreaArray[i];
-        }
-      }
-      return null;
-    }
-
-    GetAreaFromIndex(AreaIndex:number){
-      return this.AreaArray[AreaIndex];
-    }
-
-    GetAreaIndex(AreaNumber: number):number{
-      for(let i = 0 ; i < this.AreaArray.length ; i++){
-        if(this.AreaArray[i].AreaNumber === AreaNumber){
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    GetPointIndex(PointNumber:number):[AreaIndex:number, PointIndex:number]{
-      for(let i = 0 ; i < this.AreaArray.length; i++){
-        const Area = this.AreaArray[i];
-        for(let j = 0 ; j < Area.PointArray.length;j++){
-          if(Area.PointArray[j].PointNumber === PointNumber){
-            return [i, j];
-          }
-        }
-      }
-      return[-1, -1];
-    }
-
-    GetPoint(PointNumber: number){
-      for(let i = 0 ; i < this.AreaArray.length ; i++){
-        for(let j = 0 ; j < this.AreaArray[i].PointArray.length;j++){
-          if(this.AreaArray[i].PointArray[j].PointNumber === PointNumber){
-            return this.AreaArray[i].PointArray[j];
-          }
-        }
-
-      }
-      return null;
-    }
-
-    GetPointFromIndex(AreaIndex:number, PointIndex:number){
-      return this.AreaArray[AreaIndex].PointArray[PointIndex];
-    }
-
-    GetOutput(OutputNumber: number){
-      for(let i = 0 ; i < this.OutputArray.length ; i ++){
-        const Output = this.OutputArray[i];
-        if(Output.OutputNumber === OutputNumber){
-          return Output;
-        }
-      }
-      return null;
-    }
-
-    GetOutputFromIndex(OutputIndex: number):BGOutput{
-      return this.OutputArray[OutputIndex];
-    }
-
-    GetOutputIndex(OutputNumber:number):number{
-      for(let i = 0 ; i < this.OutputArray.length ; i++){
-        if(this.OutputArray[i].OutputNumber === OutputNumber) {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    SetOutputState(OutputNumer: number, State:boolean){
-      this.SendMode2SetOutputState(OutputNumer, State);
       return;
     }
 
@@ -910,7 +621,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x05]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     private ReadTerminateSession(){
@@ -945,7 +656,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Data = new Uint8Array(UserTypeArray.length + PasscodeArray.length);
       Data.set(UserTypeArray, 0);
       Data.set(PasscodeArray, UserTypeArray.length);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2Passcode
@@ -983,7 +694,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x24]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2ReqConfiguredAreas
@@ -996,7 +707,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       if(ActiveAreaMaskArray.length > 16){
         this.emit('ControllerError', BGControllerError.MaxAreaNumberError,
-          'This controller ony support ' + this.ControllerMaxAreas + ' areas');
+          'This controller ony support ' + this.BoschMaxAreas + ' areas');
         return;
       }
 
@@ -1011,12 +722,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }
 
           if(ActiveAreaMask & BitMaskArray[j]){
-            const Area = new BGArea(AreaNumer);
-            this.AreaArray.push(Area);
+            this.Areas[AreaNumer] = new BGArea(AreaNumer);
           }
         }
       }
-      this.SendMode2ReqAreaText(0);
     }
 
     // SendMode2ReqPanelCapacitie
@@ -1028,7 +737,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x1F]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // ReadMode2ReqPanelCapacitie
@@ -1042,7 +751,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.MaxUsers = (Data[9] * 255) + Data[10];
       this.MaxKeypads = Data[11];
       this.MaxDoors = Data[12];
-      this.SendMode2ReqConfiguredAreas();
     }
 
     // Function SendModeWhatAreYou
@@ -1053,9 +761,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private SendMode2WhatAreYou(){
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x01]);
-      const CommandFormat = new Uint8Array([0x01]);
+      const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadModeWhatAreYou
@@ -1094,10 +802,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Low = LastAreaRead & 0xFF;
 
       const Data = new Uint8Array([High, Low, 0, 1]);
-
-      // Work untin number of max area is bigger than 255
-      //const Data = new Uint8Array([0, this.AreaArray[this.AreaReadingIndex].AreaNumber, 0]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2ReqAreaText
@@ -1110,7 +815,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       // No more data to be read, all point text has been received from panel
       if(DataLength <= 1){
-        this.SendMode2ReqPointsInArea();
+        this.SendMode2ReqPointText(0);
         return;
       }
 
@@ -1126,10 +831,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           } else{
 
             // read a zero: done reading text
-            const Area = this.GetAreaFromNumber(AreaNumber);
-            if(Area){
-              Area.AreaText = AreaText;
-            }
+            const Area = this.Areas[AreaNumber];
+            Area.AreaText = AreaText;
 
             if(i === DataLength){
               this.SendMode2ReqAreaText(AreaNumber);
@@ -1150,16 +853,17 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x36]);
       const CommandFormat = new Uint8Array([]);
 
-      // Work untin number of max area is bigger than 255
-      const Data = new Uint8Array([0, this.AreaArray[this.AreaReadingIndex].AreaNumber]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      for (const AreaNumber in this.Areas){
+        const Data = new Uint8Array([0, Number(AreaNumber)]);
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
     }
 
     // Function ReadMode2ReqPointsInArea
     // This returns a mask of all configured points in an area that the user has authority over
     // Supported in protocol version 1.23
     //
-    private ReadMode2ReqPointsInArea(Data: Buffer){
+    private ReadMode2ReqPointsInArea(Data: Buffer, AreaNumber:number){
       const BitMaskArray = new Uint8Array([0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]);
       const ActivePointMaskArray = Data.slice(2, Data.length);
 
@@ -1174,18 +878,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }
 
           if(ActiveAreaMask & BitMaskArray[j]){
-            const p = new BGPoint(PointNumber);
-            this.AreaArray[this.AreaReadingIndex].PointArray.push(p);
+            this.Points[PointNumber] = new BGPoint(PointNumber, AreaNumber);
           }
         }
-      }
-
-      if(this.AreaReadingIndex < this.AreaArray.length-1){
-        this.AreaReadingIndex = this.AreaReadingIndex + 1;
-        this.SendMode2ReqPointsInArea();
-      } else{
-        this.AreaReadingIndex = 0;
-        this.SendMode2ReqPointText(0);
       }
     }
 
@@ -1203,7 +898,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Low = LastPointRead & 0xFF;
 
       const Data = new Uint8Array([High, Low, 0, 1]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2ReqPointText()
@@ -1217,7 +912,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       // No more data to be read, all point text has been received from panel
       if(DataLength <= 1){
-        this.SendMode2ReqConfiguredOutputs();
+        this.SendMode2ReqOutputText(0);
         return;
       }
 
@@ -1233,10 +928,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           } else{
 
             // read a zero: done reading text
-            const Point = this.GetPoint(PointNumber);
-            if(Point){
-              Point.PointText = PointText;
-            }
+            const Point = this.Points[PointNumber];
+            Point.PointText = PointText;
 
             if(i === DataLength){
               this.SendMode2ReqPointText(PointNumber);
@@ -1257,7 +950,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x30]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2ReqConfiguredOutputs()
@@ -1268,21 +961,19 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const BitMaskArray = new Uint8Array([0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]);
       const ConfiguredOutputMaskArray = Data.slice(2, Data.length);
 
-      if(ConfiguredOutputMaskArray.length * 8 > this.ControllerMaxOutput){
+      if(ConfiguredOutputMaskArray.length * 8 > this.BoschMaxOutput){
         this.emit('ControllerError', BGControllerError.MaxOutputNumberError,
-          'This controller ony support ' + this.ControllerMaxOutput + ' outputs');
+          'This controller ony support ' + this.BoschMaxOutput + ' outputs');
       }
 
       for(let i = 0 ; i < ConfiguredOutputMaskArray.length ; i++){
         for(let j = 0 ; j < 8 ; j++){
           if(ConfiguredOutputMaskArray[i] & BitMaskArray[j]){
             const OutputNumber = (i*8) + j + 1;
-            const Output = new BGOutput(OutputNumber);
-            this.OutputArray.push(Output);
+            this.Outputs[OutputNumber] = new BGOutput(OutputNumber);
           }
         }
       }
-      this.SendMode2ReqOutputText(0);
     }
 
     private SendMode2ReqOutputText(OutputNumber: number){
@@ -1292,14 +983,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const MSB = (OutputNumber >> 8) & 0xFF;
       const LSB = OutputNumber & 0xFF;
       const Data = new Uint8Array([MSB, LSB, 0, 1]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     private ReadMode2ReqOutputText(Data:Buffer){
 
       const DataLength = Data[0];
 
-      // No more data to be read, all point text has been received from panel
+      // No more data to be read, all output text has been received from panel
       if(DataLength <= 1){
         if(!this.PanelReadyForOperation){
           this.PanelReadyForOperation = true;
@@ -1320,10 +1011,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           } else{
 
             // read a zero: done reading text
-            const Output = this.GetOutput(OutputNumber);
-            if(Output){
-              Output.OutputText = OutputText;
-            }
+            const Output = this.Outputs[OutputNumber];
+            Output.OutputText = OutputText;
 
             if(i === DataLength){
               this.SendMode2ReqOutputText(OutputNumber);
@@ -1357,7 +1046,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       const Data = new Uint8Array([MSB, LSB, State]);
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2SetOutputState()
@@ -1382,17 +1071,16 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       let Data = new Uint8Array([]);
 
-      for(let i = 0; i < this.AreaArray.length ; i++){
-        const AreaNumber = this.AreaArray[i].AreaNumber;
-        const AHigh = (AreaNumber >> 8) & 0xFF;
-        const ALow = AreaNumber & 0xFF;
+      for (const AreaNumber in this.Areas){
+        const AHigh = (Number(AreaNumber) >> 8) & 0xFF;
+        const ALow = Number(AreaNumber) & 0xFF;
 
         const temp = new Uint8Array(Data.length + 2);
         temp.set(Data);
         temp.set([AHigh, ALow], Data.length);
         Data = temp;
       }
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, false);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false);
     }
 
     private ReadMode2ReqAreaStatus(Data:Buffer){
@@ -1405,17 +1093,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         const AreaNumberLow = Data[(i*5) + 3];
 
         const AreaNumber = (AreaNumberHigh << 8) + AreaNumberLow;
-        const Area = this.GetAreaFromNumber(AreaNumber);
-        if(Area){
-          Area.AreaStatus = Data[(i*5) + 4];
+        const Area = this.Areas[AreaNumber];
+        Area.AreaStatus = Data[(i*5) + 4];
 
-          const AlarmAnnunciationPriorityHigh = Data[(i*5) + 5];
-          const AlarmAnnunciationPriorityLow = Data[(i*5) + 6];
-          const AlarmAnnunciationPriority = (AlarmAnnunciationPriorityHigh << 8) + AlarmAnnunciationPriorityLow;
-          Area.SetAlarm(AlarmAnnunciationPriority);
-          if(this.PanelReceivingNotifcation){
-            this.emit('AreaAlarmStateChange', Area);
-          }
+        const AlarmAnnunciationPriorityHigh = Data[(i*5) + 5];
+        const AlarmAnnunciationPriorityLow = Data[(i*5) + 6];
+        const AlarmAnnunciationPriority = (AlarmAnnunciationPriorityHigh << 8) + AlarmAnnunciationPriorityLow;
+        Area.SetAlarm(AlarmAnnunciationPriority);
+        if(this.PanelReceivingNotifcation){
+          this.emit('AreaAlarmStateChange', Area);
         }
       }
     }
@@ -1455,7 +1141,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         temp.set([LocalAreaMask], TotalAreaMask.length);
         TotalAreaMask = temp;
       }
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask), true, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask), true);
     }
 
     ReadMode2ArmPanelAreas(){
@@ -1491,7 +1177,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         ConfigChange[0], AreaOnOff[0], AreaReady[0], OutputState[0], PointState[0], DoorState[0], WalkTestType[0],
         RequestPanelSystem[0], WirelessLeanModeState[0], PoinExtendedState[0]]);
 
-      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false, true);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
     // Function ReadMode2SetSubscriptions()
@@ -1530,7 +1216,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       Request.set(CommandFormat, offset += Command.length);
       Request.set(Data, offset += CommandFormat.length);
 
-      if(Request.length > this.ControllerMaxCommandBytes){
+      if(Request.length > this.BoschMaxCommandBytes){
         this.emit('ControllerError', BGControllerError.CommandLengthOverflow, Request.toString());
         return new Uint8Array();
       }
