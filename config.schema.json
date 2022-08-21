@@ -32,24 +32,49 @@
         "title":"Master Fire Alarm",
         "type": "boolean",
         "required": true,
-        "default": true
+        "default": false
       },
       "MasterPersonnalAlarm":{
         "title":"Master Personnal Alarm",
         "type": "boolean",
         "required": true,
-        "default": true
+        "default": false
       },
       "MasterGazAlarm":{
         "title":"Master Gaz Alarm",
         "type": "boolean",
         "required": true,
-        "default": true
+        "default": false
       },
       "MasterBurglaryAlarm":{
         "title":"Master Burglary Alarm",
         "type": "boolean",
         "required": true,
+        "default": false
+      },
+      "LogConfidenceMessage":{
+        "type": "boolean",
+        "title": "Panel Confidence Message Notifications (Keep Alive)",
+        "default": false
+      },
+      "LogPoint":{
+        "type": "boolean",
+        "title": "Points Notifications",
+        "default": false
+      },
+      "LogOutput":{
+        "type": "boolean",
+        "title": "Output Notifications",
+        "default": true
+      },
+      "LogAreaAlarm":{
+        "type": "boolean",
+        "title": "Area Alarm Notifications",
+        "default": true
+      },
+      "LogAreaArmingStatus":{
+        "type": "boolean",
+        "title": "Area Arming Status Notifications",
         "default": true
       },
       "Areas":{
@@ -63,16 +88,22 @@
                "title": "Number",
                "required": true
             },
-            "CustomText":{
-              "title":"Custom Area Text",
-              "description": "Keep empty to use area text from control panel",
+            "AreaInScope":{
               "type": "string",
-              "default": ""
-             },
+               "title": "Area(s) in Scope",
+               "required": false
+            },
+            "PasscodeFollowsScope":{
+              "type": "boolean",
+               "title": "Passcode Follows Scope",
+               "default": false,
+               "required": true
+            },
             "Active":{
               "title": "Show Accessory in Home App",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "required": true
            }
         }
       }
@@ -88,12 +119,6 @@
              "title": "Number",
              "required": true
           },
-          "CustomText":{
-            "title":"Custom Output Text",
-            "description": "Keep empty to use output text from control panel",
-            "type": "string",
-            "default": ""
-           },
           "Active":{
             "title": "Show Accessory in Home App",
             "type": "boolean",
@@ -113,12 +138,6 @@
                "title": "Number",
                "required": true
              },
-             "CustomText":{
-              "title":"Custom Point Text",
-              "description": "Keep empty to use point text from control panel",
-              "type": "string",
-              "default": ""
-             },
             "SensorType":{
               "type": "string",
               "title": "Sensor Type",
@@ -127,33 +146,23 @@
               "oneOf": [
                 {
                   "title": "Motion Sensor",
-                  "enum": [
-                    "MotionSensor"
-                  ]
+                  "enum": ["MotionSensor"]
                   },
                   {
                     "title": "Contact Sensor",
-                    "enum": [
-                        "ContactSensor"
-                      ]
+                    "enum": ["ContactSensor"]
                     },
                     {
                       "title": "Leak Sensor",
-                      "enum": [
-                        "LeakSensor"
-                      ]
+                      "enum": ["LeakSensor"]
                     },
                     {
                       "title": "CO Sensor",
-                      "enum": [
-                        "COSensor"
-                      ]
+                      "enum": ["COSensor"]
                     },
                     {
                       "title": "Smoke Sensor",
-                      "enum": [
-                        "SmokeSensor"
-                      ]
+                      "enum": ["SmokeSensor"]
                     }
               ]
             },
@@ -169,7 +178,7 @@
   },
   "layout": [
     {
-      "title": "<h4><b>Control Panel Configuration</b></h4>",
+      "title": "<h4><b>Bosch Control Panel Configuration</b></h4>",
       "type": "flex",
       "flex-flow": "column wrap",
       "items":[
@@ -190,23 +199,8 @@
       ]
     },
     {
-      "title": "<h4><b>Master Alarms Accessories</b></h4>",
-      "type": "flex",
-      "flex-flow": "column wrap",
-      "items": [
-        {
-          "type": "help",
-          "helpvalue": "<em class='primary-text'>If selected, Contact Sensors will be added in Home App to monitor Fire, Gaz, Burglary or Personnal Alarms. Each sensor will trigger only if an alarm state for the event it is monitoring is detected on any Area configured on the Bosch Control Panel. </em>"
-        },
-        "MasterFireAlarm",
-        "MasterGazAlarm",
-        "MasterBurglaryAlarm",
-        "MasterPersonnalAlarm"
-      ]
-    },
-    {
       "type": "help",
-      "helpvalue": "<em class='primary-text'>For the following 3 sections, please note the Areas, Points and Outpus numbers on your Bosch Control Panel you wish to configure in this plugin. Areas, Points and Outputs numbers can be found on your Bosch Keypad or in your Homebridge log file after a sucessful connection to the panel.</em>"
+      "helpvalue": "<em class='primary-text'>For configuration options, please check this link:</em> <a href='https://github.com/EHylands/homebridge-boschcontrolpanel_bgseries#homebride-pluging-configuration-file'> Config File Options</a>"
     },
     {
       "key": "Areas",
@@ -226,8 +220,23 @@
               "displayFlex": true,
               "flex-direction": "row",
               "items": [
-                {"key": "Areas[].AreaNumber", "flex": "2 2 25px"},
-                {"key": "Areas[].CustomText", "flex": "8 8 50px"}
+                {"key": "Areas[].AreaNumber", "flex": "2 2 25px"}
+              ]
+            },
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Areas[].AreaInScope", "flex": "2 2 10px"}
+              ]
+            },
+            {
+              "type": "div",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {"key": "Areas[].PasscodeFollowsScope", "flex": "2 2 10px"}
               ]
             },
             {
@@ -261,8 +270,7 @@
               "flex-direction": "row",
               "items": [
                 {"key": "Points[].PointNumber", "flex": "1 1 25px"},
-                {"key": "Points[].SensorType", "flex": "3 3 50px"},
-                {"key": "Points[].CustomText", "flex": "5 5 100px"}
+                {"key": "Points[].SensorType", "flex": "3 3 50px"}
               ]
             },
             {
@@ -295,8 +303,7 @@
               "displayFlex": true,
               "flex-direction": "row",
               "items": [
-                {"key": "Outputs[].OutputNumber", "flex": "2 2 25px"},
-                {"key": "Outputs[].CustomText", "flex": "8 8 50px"}
+                {"key": "Outputs[].OutputNumber", "flex": "2 2 25px"}
               ]
             },
             {
@@ -309,6 +316,33 @@
             }
           ]
         }
+      ]
+    },
+    {
+      "title": "Master Alarm Accessories",
+      "expandable": true,
+      "expanded": true,
+      "type": "array",
+      "flex-flow": "column wrap",
+      "items": [
+        "MasterFireAlarm",
+        "MasterGazAlarm",
+        "MasterBurglaryAlarm",
+        "MasterPersonnalAlarm"
+      ]
+    },
+    {
+      "title": "Homebridge Log File Configuration",
+      "expandable": true,
+      "expanded": true,
+      "type": "array",
+      "flex-flow": "column wrap",
+      "items": [
+        "LogConfidenceMessage",
+        "LogPoint",
+        "LogOutput",
+        "LogAreaAlarm",
+        "LogAreaArmingStatus"
       ]
     }
   ]
