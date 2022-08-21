@@ -19,10 +19,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 ## Bosch Control Panel Configuration
 
-### Easy method
-Contact your Bosch Control Panel installer. The following required configuration options can be remotely applied to your panel.
-
-### Hard method
+### Bosch RPS Software installation
 * Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
 * Initial connection to your Bosch Control Panel with RPS through network requires an RPS passcode. RPS passcode should be provided with your hardware. If RPS Passcode is not avaiblable, connection to the panel can be established with a direct USB cable. 
 
