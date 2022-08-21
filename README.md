@@ -5,8 +5,8 @@
 This Homebridge plugin allows interactions with your Bosch Control Panel
 
 * Set Control Panel Area arming mode (Arm, Disarm, Part on instant, Part on delay)
-* Set Control Panel Outputs states (On, Off)
-* Use Control Panel Points states for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
+* Set Control Panel Outputs state (On, Off)
+* Use Control Panel Points state for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
 * Get Panel Wide notifiations for Fire, Burglary, Gaz and Personnal events. 
 
 ![Screenshot](BCP0401.jpg)
@@ -37,17 +37,17 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * `Name` : Plugin name
 * `Host`:  Bosch Control Panel IP address
 * `Port`:  Bosch Control Panel Port number (defaults to 7700)
-* `Automation passcode`: Value as configured on your Bosch Control Panel (See required configurations options)
-### Areas (Only add areas to be monitored by Homebridge in config file)
+* `Automation passcode`: Value as configured on your Bosch Control Panel
+### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
-* `"Area(s) in Scope`: Comma separated list of other area on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those are, your accessory will trigger
-* `Passcode Follows Scope`: If selected, Arming and Disarming your accessory will alse Arm or Disarm all other Area in Scope. 
-* `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area arming mode
-### Points - Control Panel Sensors (Only add points to be monitored by Homebridge in config file)
+* `"Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
+* `Passcode Follows Scope`: If selected, Arming and Disarming your accessory will also Arm or Disarm all other Areas in Scope (Default value: not selected)
+* `Show Accessory in Home App`: Show Security System Accessory in Home App
+### Points - Control Panel Sensors (Only add points to be monitored by Homebridge)
 * `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin
 * `Sensor Type`: Motion Sensor, Contact Sensor, Leak Sensor, CO Sensor or Smoke Sensor
 * `Show Accessory in Home App`: Show Sensor Accessory in Home App 
-### Outputs (Only add outputs to be monitored by Homebridge in config file)
+### Outputs (Only add outputs to be monitored by Homebridge)
 * `Number`: Output number on the Control Panel to be monitored by the pluggin
 * `Show Accessory in Home App`: Show Output Accessory in Home App
 ### Master Alarms Sensors
@@ -57,11 +57,11 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 * `MasterBurglaryAlarm`: Report panel wide Burglary alarms
 * `MasterPersonnalAlarm`: Report panel wide Personnal alarms
 ### Log File Configuration
-* `Panel Confidence Message Notifications`: Show control pane keep alive notification in log file
+* `Panel Confidence Message Notifications`: Show control panel keep alive notifications in log file
 * `Points Notifications`: Show sensors state changes in log file
-* `Output Notifications`: Show outputs states changes in log file
-* `Area Alarm Notifications`: Show Area Alarm in log file
-* `Area Arming Status Notifications`: Show Area Arming status in log file
+* `Output Notifications`: Show outputs state changes in log file
+* `Area Alarm Notifications`: Show Areas Alarms in log file
+* `Area Arming Status Notifications`: Show Areas Arming status in log file
 
 ## Operation
 ### Security System Accessory:
@@ -76,8 +76,9 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 
 # Releases
 ## 0.4.0
-
- 
+* Adding support for Security System accessory `Area(s) in Scope` and `Passcode Follows Scope` options
+* Adding Log File configuration options
+* General code maintenance
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.
