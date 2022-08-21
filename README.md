@@ -10,7 +10,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * Get Panel Wide notifiations for Fire, Burglary, Gaz and Personnal events. 
 
 ![Screenshot](BCP0401.jpg)
-![Screenshot](BCP042.jpg)
+![Screenshot](BCP0402.jpg)
 
 ## Supported Bosch Control Panels
 
