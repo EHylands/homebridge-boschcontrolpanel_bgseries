@@ -9,8 +9,8 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * Use Control Panel Points states for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
 * Get Panel Wide notifiations for Fire, Burglary, Gaz and Personnal events. 
 
-![Screenshot](BCP01.jpg)
-![Screenshot](BCP02.jpg)
+![Screenshot](BCP0401.jpg)
+![Screenshot](BCP042.jpg)
 
 ## Supported Bosch Control Panels
 
@@ -19,7 +19,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 ## Bosch Control Panel Configuration
 
-### Bosch RPS Software installation
+### RPS Software installation
 * Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
 * Initial connection to your Bosch Control Panel with RPS through network requires an RPS passcode. RPS passcode should be provided with your hardware. If RPS Passcode is not avaiblable, connection to the panel can be established with a direct USB cable. 
 
