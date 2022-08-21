@@ -40,16 +40,16 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * `Automation passcode`: Value as configured on your Bosch Control Panel (See required configurations options)
 ### Areas (Only add areas to be monitored by Homebridge in config file)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
-* `"Area(s) in Scope`:
-* `Passcode Follows Scope`:
+* `"Area(s) in Scope`: Comma separated list of other area on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those are, your accessory will trigger
+* `Passcode Follows Scope`: If selected, Arming and Disarming your accessory will alse Arm or Disarm all other Area in Scope. 
 * `Show Accessory in Home App`: Show Security System Accessory in Home App to change this area arming mode
 ### Points - Control Panel Sensors (Only add points to be monitored by Homebridge in config file)
-* `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all sensors available for configuration.
-* `Show Accessory in Home App`: Show Sensor Accessory in Home App for automation purposes. 
+* `Number`: Point (Sensor) number on the Control Panel to be monitored by the pluggin
 * `Sensor Type`: Motion Sensor, Contact Sensor, Leak Sensor, CO Sensor or Smoke Sensor
+* `Show Accessory in Home App`: Show Sensor Accessory in Home App 
 ### Outputs (Only add outputs to be monitored by Homebridge in config file)
-* `Number`: Output number on the Control Panel to be monitored by the pluggin. When first run in debug mode, the plugin will list all outputs available for configuration.
-* `Show Accessory in Home App`: Show Output Accessory in Home App. 
+* `Number`: Output number on the Control Panel to be monitored by the pluggin
+* `Show Accessory in Home App`: Show Output Accessory in Home App
 ### Master Alarms Sensors
 If selected, Contact Sensors will be added in Home App and report panel wide Fire, Gaz, Burglary or Personnal alarms.
 * `MasterFireAlarm`: Report panel wide Fire alarms
