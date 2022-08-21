@@ -33,9 +33,6 @@ export class BGContactSensor extends BGSensor {
 
     const ContactDetected = PointStatus === BGPointStatus.Normal;
 
-    //this.platform.log.debug('Homebridge: ' + this.SensorType + '(Point'+ this.PointNumber +':'+ this.accessory.displayName +
-    //'): ContactDectected: ' + ContactDetected );
-
     if(ContactDetected){
       this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
