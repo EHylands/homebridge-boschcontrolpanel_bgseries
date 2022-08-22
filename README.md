@@ -40,7 +40,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * `Automation passcode`: Value as configured on your Bosch Control Panel
 ### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
-* `"Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
+* `Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
 * `Passcode Follows Scope`: If selected, Arming and Disarming your accessory will also Arm or Disarm all other Areas in Scope (Default value: not selected)
 * `Show Accessory in Home App`: Show Security System Accessory in Home App
 ### Points - Control Panel Sensors (Only add points to be monitored by Homebridge)
@@ -75,7 +75,7 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Home | Part On Delay
 
 # Releases
-## 0.4.0
+## 0.4.2
 * Adding support for Security System accessory `Area(s) in Scope` and `Passcode Follows Scope` options
 * Adding Log File configuration options
 * General code maintenance
