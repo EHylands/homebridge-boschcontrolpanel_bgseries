@@ -3,15 +3,15 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGController, BGPanelType, BGUserType, BGControllerError } from './BGController';
 import {BGPoint, BGPointStatus} from './BGPoint';
 import { BGAreaStatus, BGAlarmType } from './BGArea';
-import { BoschSecurityPanel } from './BoschSecurityPanel';
-import { BGMotionSensor } from './BGMotionSensor';
-import { BGContactSensor } from './BGContactSensor';
-import { BGLeakSensor } from './BGLeakSensor';
-import { BGSmokeSensor } from './BGSmokeSensor';
-import { BGCOSensor } from './BGCOSensor';
-import { BGSensor } from './BGSensor';
-import { BGOutputAccessory } from './BGOutputAccessory';
-import { BGAlarmSensor } from './BGAlarmSensor';
+import { BoschSecurityPanel } from './HKSecurityPanel';
+import { BGMotionSensor } from './HKMotionSensor';
+import { BGContactSensor } from './HKContactSensor';
+import { BGLeakSensor } from './HKLeakSensor';
+import { BGSmokeSensor } from './HKSmokeSensor';
+import { BGCOSensor } from './HKCOSensor';
+import { BGSensor } from './HKSensor';
+import { BGOutputAccessory } from './HKOutputAccessory';
+import { BGAlarmSensor } from './HKAlarmSensor';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',
