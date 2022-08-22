@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { HB_BoschControlPanel_BGSeries } from './platform';
-import { BGController } from './Controller/BGController';
+import { BGController } from './BGController';
 
 export class BGOutputAccessory {
   private service: Service;

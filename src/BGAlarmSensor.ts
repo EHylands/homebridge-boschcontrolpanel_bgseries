@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { HB_BoschControlPanel_BGSeries } from './platform';
-import { BGController } from './Controller/BGController';
-import { BGAlarmType } from './Controller/BGArea';
+import { BGController } from './BGController';
+import { BGAlarmType } from './BGArea';
 
 export class BGAlarmSensor {
   private service: Service;
