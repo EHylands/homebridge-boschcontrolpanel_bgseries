@@ -1,4 +1,4 @@
-import { BGPoint } from './BGpoint';
+import { BGPoint } from './BGPoint';
 import { BGOutput } from './BGOutput';
 import { BGArmingType, BGArea } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
