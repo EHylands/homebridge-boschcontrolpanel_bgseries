@@ -1,8 +1,8 @@
 {
-  "displayName": "Bosch B and G Control Panel",
+  "displayName": "Bosch B and G Series Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
   "version": "0.4.2",
-  "description": "Homekit integration for Bosch B and G control panel.",
+  "description": "Homebridge plugin for Bosch B and G Series Control Panel.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,7 +23,11 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "HomeKit",
+    "Bosch",
+    "Security system",
+    "Home automation"
   ],
   "dependencies": {
     "tiny-typed-emitter": "^2.1.0"

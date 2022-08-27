@@ -3,7 +3,7 @@ import { BGController, BGPanelType } from './BGController';
 import { BGAreaStatus, BGArmingType } from './BGArea';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 
-export class BoschSecurityPanel {
+export class HKSecurityPanel {
   private service: Service;
   private Panel:BGController;
 

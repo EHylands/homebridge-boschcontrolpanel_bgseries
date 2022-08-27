@@ -1,17 +1,17 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGController, BGPanelType, BGUserType, BGControllerError } from './BGController';
-import {BGPoint, BGPointStatus} from './BGPoint';
+import { BGPoint, BGPointStatus} from './BGPoint';
 import { BGAreaStatus, BGAlarmType } from './BGArea';
-import { BoschSecurityPanel } from './HKSecurityPanel';
-import { BGMotionSensor } from './HKMotionSensor';
-import { BGContactSensor } from './HKContactSensor';
-import { BGLeakSensor } from './HKLeakSensor';
-import { BGSmokeSensor } from './HKSmokeSensor';
-import { BGCOSensor } from './HKCOSensor';
-import { BGSensor } from './HKSensor';
-import { BGOutputAccessory } from './HKOutputAccessory';
-import { BGAlarmSensor } from './HKAlarmSensor';
+import { HKSecurityPanel } from './HKSecurityPanel';
+import { HKMotionSensor } from './HKMotionSensor';
+import { HKContactSensor } from './HKContactSensor';
+import { HKLeakSensor } from './HKLeakSensor';
+import { HKSmokeSensor } from './HKSmokeSensor';
+import { HKCOSensor } from './HKCOSensor';
+import { HKSensor } from './HKSensor';
+import { HKOutputAccessory } from './HKOutputAccessory';
+import { HKAlarmSensor } from './HKAlarmSensor';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',
@@ -33,9 +33,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelPasscode = '';
   public readonly Panel: BGController;
 
-  private PointsArray:Record<number, BGSensor> = {};
-  private OutputsArray:Record<number, BGOutputAccessory> = {};
-  private ControlPanelArray: BoschSecurityPanel[] = [];
+  private PointsArray:Record<number, HKSensor> = {};
+  private OutputsArray:Record<number, HKOutputAccessory> = {};
+  private ControlPanelArray: HKSecurityPanel[] = [];
 
   private InitialRun = true;
   private ReceivingPanelNotification = false;
@@ -185,13 +185,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
-        this.OutputsArray[Output.OutputNumber] = new BGOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
+        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
         const OutputText = PanelOutput.OutputText;
         const accessory = new this.api.platformAccessory(OutputText, uuid);
-        this.OutputsArray[Output.OutputNumber] = new BGOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
+        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
         this.CreatedAccessories.push(accessory);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
@@ -219,13 +219,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
       if (existingAccessory) {
-        this.ControlPanelArray.push(new BoschSecurityPanel(this, existingAccessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
+        this.ControlPanelArray.push(new HKSecurityPanel(this, existingAccessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
         const AreaText = PanelArea.AreaText;
         const accessory = new this.api.platformAccessory(AreaText, uuid);
-        this.ControlPanelArray.push(new BoschSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
+        this.ControlPanelArray.push(new HKSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
         this.CreatedAccessories.push(accessory);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
@@ -446,11 +446,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
     if (existingAccessory) {
-      new BGAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
+      new HKAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
       this.CreatedAccessories.push(existingAccessory);
     } else{
       const accessory = new this.api.platformAccessory('Master ' + MonitoringEvent + ' Alarm', uuid);
-      new BGAlarmSensor(this, accessory, this.Panel, MonitoringArea, MonitoringEvent);
+      new HKAlarmSensor(this, accessory, this.Panel, MonitoringArea, MonitoringEvent);
       this.CreatedAccessories.push(accessory);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
@@ -461,27 +461,27 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     switch(Accessory.context.SensorType){
 
       case BGSensorType.MotionSensor:{
-        this.PointsArray[Point.PointNumber] = new BGMotionSensor(this, Accessory, this.Panel, Point.PointNumber);
+        this.PointsArray[Point.PointNumber] = new HKMotionSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.ContactSensor:{
-        this.PointsArray[Point.PointNumber] =new BGContactSensor(this, Accessory, this.Panel, Point.PointNumber);
+        this.PointsArray[Point.PointNumber] =new HKContactSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.LeakSensor :{
-        this.PointsArray[Point.PointNumber] = new BGLeakSensor(this, Accessory, this.Panel, Point.PointNumber);
+        this.PointsArray[Point.PointNumber] = new HKLeakSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.SmokeSensor :{
-        this.PointsArray[Point.PointNumber] = new BGSmokeSensor(this, Accessory, this.Panel, Point.PointNumber);
+        this.PointsArray[Point.PointNumber] = new HKSmokeSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
 
       case BGSensorType.COSensor :{
-        this.PointsArray[Point.PointNumber] = new BGCOSensor(this, Accessory, this.Panel, Point.PointNumber);
+        this.PointsArray[Point.PointNumber] = new HKCOSensor(this, Accessory, this.Panel, Point.PointNumber);
         break;
       }
     }

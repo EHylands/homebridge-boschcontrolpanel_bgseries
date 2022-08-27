@@ -3,10 +3,8 @@ import { BGController } from './BGController';
 import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
-export abstract class BGSensor {
+export abstract class HKSensor {
   protected service: Service;
-  protected readonly AreaIndex;
-  protected readonly PointIndex;
   readonly SensorType: BGSensorType;
 
   constructor(

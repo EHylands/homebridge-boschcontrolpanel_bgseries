@@ -2,7 +2,7 @@ import { Service, PlatformAccessory } from 'homebridge';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 import { BGController } from './BGController';
 
-export class BGOutputAccessory {
+export class HKOutputAccessory {
   private service: Service;
 
   constructor(

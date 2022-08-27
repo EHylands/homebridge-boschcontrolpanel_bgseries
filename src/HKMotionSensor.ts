@@ -1,10 +1,10 @@
 import { Service, PlatformAccessory } from 'homebridge';
-import { BGSensor } from './HKSensor';
+import { HKSensor } from './HKSensor';
 import { BGController } from './BGController';
 import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
-export class BGMotionSensor extends BGSensor {
+export class HKMotionSensor extends HKSensor {
 
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,

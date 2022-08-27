@@ -3,7 +3,7 @@ import { HB_BoschControlPanel_BGSeries } from './platform';
 import { BGController } from './BGController';
 import { BGAlarmType } from './BGArea';
 
-export class BGAlarmSensor {
+export class HKAlarmSensor {
   private service: Service;
 
   constructor(
