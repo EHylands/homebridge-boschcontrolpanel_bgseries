@@ -141,7 +141,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     private Host: string;
     private Port: number;
-    private SecureSocket: tls.TLSSocket;
+    private SecureSocket:tls.TLSSocket;
     private Socket: net.Socket;
     private SocktetTimeout = 180000;
 
