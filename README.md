@@ -1,6 +1,8 @@
 
 # Homebridge Plugin for Bosch B and G Control Panels
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 [![npm downloads](https://badgen.net/npm/dt/homebridge-boschcontrolpanel_bgseries)](https://www.npmjs.com/package/homebridge-boschcontrolpanel_bgseries)
+
 
 This Homebridge plugin allows interactions with your Bosch Control Panel
 
