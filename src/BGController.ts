@@ -1460,7 +1460,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 1.14
     //
     private ReadMode2SetOutputState_CF01(){
-      console.log('cf01');
       return;
     }
 
