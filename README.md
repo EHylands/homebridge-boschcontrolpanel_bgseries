@@ -76,12 +76,6 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Night | Part On Instant
 | Home | Part On Delay
 
-# Releases
-## 0.4.2
-* Adding support for Security System accessory `Area(s) in Scope` and `Passcode Follows Scope` options
-* Adding Log File configuration options
-* General code maintenance
-
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.
 

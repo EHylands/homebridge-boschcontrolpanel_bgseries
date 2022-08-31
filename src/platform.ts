@@ -182,7 +182,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         continue;
       }
 
-      const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
+      const uuid = this.api.hap.uuid.generate('ZBGOutput' + this.Panel.PanelType + Output.OutputNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
         this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
@@ -215,7 +215,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         }
       }
 
-      const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
+      const uuid = this.api.hap.uuid.generate('ZBGArea' + this.Panel.PanelType + Area.AreaNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
       if (existingAccessory) {
@@ -243,7 +243,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
       const PointText = PointInPanel.PointText;
 
-      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
+      const uuid = this.api.hap.uuid.generate('ZBGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
@@ -317,7 +317,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.log.info('-----------------------------------------');
       this.log.info('Starting Control Panel Operation');
       this.log.info('-----------------------------------------');
-      this.Panel.SendMode2SetSubscriptions();
+      this.Panel.StartOperation();
     });
 
     this.Panel.on('PanelReceivingNotifiation', (PanelReceivingNotification) =>{
@@ -443,7 +443,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   private CreateMasterAlarm(MonitoringEvent:string, MonitoringArea:number){
-    const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
+    const uuid = this.api.hap.uuid.generate('ZBGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
     if (existingAccessory) {
       new HKAlarmSensor(this, existingAccessory, this.Panel, MonitoringArea, MonitoringEvent);
@@ -493,7 +493,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('-----------------------------------------');
     this.log.info('Panel Type: ' + BGPanelType[this.Panel.PanelType]);
     this.log.info('RPS Version: ' + this.Panel.PanelRPSProtocolVersion.toSring());
-    this.log.info('Intrusion Protocol Version: ' + this.Panel.PanelIntrusionIntegrationProtocolVersion.toSring());
+    this.log.info('Intrusion Protocol Version: ' + this.Panel.PanelIIPVersion.toSring());
     this.log.info('Execute Protocol Version: ' + this.Panel.PanelExecuteProtocolVersion.toSring());
     this.log.info('Panel Max Areas: ' + this.Panel.MaxAreas);
     this.log.info('Panel Max Points: ' + this.Panel.MaxPoints);
@@ -501,6 +501,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Panel Max Users: ' + this.Panel.MaxUsers);
     this.log.info('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.info('Panel Max Doors: ' + this.Panel.MaxDoors);
+    this.log.info('Panel Legacy Mode: ' + this.Panel.LegacyMode);
 
     for (const AreaNumber in this.Panel.GetAreas()){
       const Area = this.Panel.GetAreas()[AreaNumber];
