@@ -23,6 +23,15 @@ export class BGPoint{
       this.AreaNumber = AreaNumber;
     }
 
+    UpdateStatus(NewStatus:BGPointStatus){
+      if(NewStatus !== this.PointStatus){
+        this.PointStatus = NewStatus;
+        return true;
+      }
+
+      return false;
+    }
+
     UpdatePoint(PointStatus: BGPointStatus, Bypassable: boolean, PointCode: number, PointCondition: number){
       this.PointStatus = PointStatus;
       this.Bypassable = Bypassable;

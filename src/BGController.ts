@@ -1,6 +1,6 @@
 import { BGPoint } from './BGPoint';
 import { BGOutput } from './BGOutput';
-import { BGArmingType, BGArea } from './BGArea';
+import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
@@ -13,7 +13,7 @@ enum BGNegativeAcknowledgement {
   InvalidCommand = 0x03,
   InvalidInterfaceState = 0x04,
   DataOutOfRange = 0x05,
-  Noauthority = 0x05,
+  Noauthority = 0x06,
   Unsupportedcommand = 0x07,
   CannotArmPanel = 0x08,
   InvalidRemoteID = 0x09,
@@ -56,6 +56,7 @@ enum BGNegativeAcknowledgement {
 export enum BGControllerError{
   InvalidProtocolLength = 'Invalid Protocol Length',
   InvalidProtocol = 'Invalid Protocol',
+  InvalidProtocolVersion = 'Invalid Protocol Version',
   InvalidCommandLength = 'Invalid Command Length',
   InvalidCommandFormatLength = 'Invalid Command Format Length',
   InvalidResponseArgumentLength = 'Invalid Response Length',
@@ -103,27 +104,6 @@ enum MaxConnectionsInUseFlags {
   MaxRPSAlinkusersInUse = 0x01
 }
 
-export enum BGAlarmPriority{
-  BurgTrouble = 1,
-  BurgSupervisory = 2,
-  GasTrouble = 3,
-  GasSupervisory = 4,
-  FireTrouble = 5,
-  FireSupervisory = 6,
-  BurgAlarm = 7,
-  PersonalEmergency = 8,
-  GasAlarm = 9,
-  FireAlarm = 10,
-  BurglaryTamper = 11,
-  BurglaryFault = 12,
-  TechnicalFireAlarm = 13,
-  TechnicalFireTamper = 14,
-  TechnicalFireFault = 15,
-  TechnicalGasAlarm = 16,
-  TechnicalGasTamper = 17,
-  TechnicalGasFault =19
-}
-
 export interface BoschControllerMode2Event {
   'PanelReadyForOperation': (PanelReady: boolean) => void;
   'PanelReceivingNotifiation': (PanelReceivingNotification:boolean) => void;
@@ -157,13 +137,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     readonly BoschMaxCommandBytes = 236;
     readonly BoschMaxNotificationMessageBytes = 480;
 
-    // Mininum protocol supported version
-    readonly MinimumIntrusionIntegrationProtocolVersion = new BGProtocolVersion(5, 208, 0);
-
     // Current Panel related variables
     PanelRPSProtocolVersion = new BGProtocolVersion(0, 0, 0);
-    PanelIntrusionIntegrationProtocolVersion = new BGProtocolVersion(0, 0, 0);
     PanelExecuteProtocolVersion = new BGProtocolVersion(0, 0, 0);
+    PanelIIPVersion = new BGProtocolVersion(0, 0, 0);
     PanelBusyFlag = false;
     PanelType = BGPanelType.Undefined;
     MaxAreas = 0;
@@ -184,11 +161,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private PanelReadyForOperation = false;
     private PanelReceivingNotifcation = false;
 
-    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string) {
+    // Legacy options
+    private InitialRun = true;
+    private PoolInterval = 500;
+    private ForleLegacyMode = false;
+    private EventDataLength = 0;
+    LegacyMode = false;
+
+
+    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
       this.Host = Host;
       this.Port = Port;
       this.Passcode = Passcode;
+      this.ForleLegacyMode = ForceLegacyMode;
       this.UserType = UserType;
       this.Socket = new net.Socket();
       this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
@@ -201,6 +187,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       this.PanelReadyForOperation = false;
       this.PanelReceivingNotifcation = false;
+      this.InitialRun = true;
+      this.LegacyMode = false;
 
       this.Socket = new net.Socket();
       this.Socket.setTimeout(this.SocktetTimeout);
@@ -236,6 +224,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             this.ReadProtocolMessage_0x02(Data);
             break;
           }
+
+          default:{
+            this.emit('ControllerError', BGControllerError.InvalidProtocol,
+              'Received unknown protocol number from panel');
+          }
         }
       });
 
@@ -258,10 +251,28 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     SetOutputState(OutputNumer: number, State:boolean){
-      this.SendMode2SetOutputState(OutputNumer, State);
+      if(this.LegacyMode){
+        this.SendMode2SetOutputState_CF01(OutputNumer, State);
+      } else{
+        this.SendMode2SetOutputState_CF02(OutputNumer, State);
+      }
       return;
     }
 
+    StartOperation(){
+      if(this.LegacyMode){
+        this.PoolPanel();
+      } else{
+        this.SendMode2SetSubscriptions();
+      }
+    }
+
+    private PoolPanel(){
+      this.SendMode2ReqPointsStatus();
+      this.SendMode2ReqOutputStatus();
+      this.SendMode2ReqAreaStatus_CF01();
+      this.SendMode2ReqAlarmMemorySummary_CF01();
+    }
 
     private QueueProtocolCommand_0x01(Command:Uint8Array, AllowDuplicate:boolean){
 
@@ -324,10 +335,21 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x01: // Mode2WhatAreYou
           if(Response === 0xFE){
             this.ReadMode2WhatAreYou(Data);
-            this.SendMode2Passcode();
+
+            if(this.PanelType === BGPanelType.Solution2000 ||
+              this.PanelType === BGPanelType.Solution3000 ||
+              this.PanelType === BGPanelType.AMAX2100 ||
+              this.PanelType === BGPanelType.AMAX3000 ||
+              this.PanelType === BGPanelType.AMAX4000
+            ){
+              this.SendMode2LoginRSCUser();
+            } else{
+              this.SendMode2Passcode();
+            }
           }else{
             if(Response === 0xFD){
-              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2WhatAreYou: ' + BGNegativeAcknowledgement[Data[2]]);
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2WhatAreYou: '
+              + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2WhatAreYou: ' + Data);
             }
@@ -359,6 +381,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }
           break;
 
+        case 0x08: // Mode2ReqAlarmMemorySummary;
+          if(Response === 0xFE){
+            this.ReadMode2ReqAlarmMemorySummary_CF01(Data);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmMemorySummary: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmMemorySummary: '
+              + Data);
+            }
+          }
+          break;
+
         case 0x1F: // Mode2Capacitie
           if(Response === 0xFE){
             this.ReadMode2ReqPanelCapacitie(Data);
@@ -371,6 +407,21 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             }
           }
           break;
+
+        case 0x23: // Mode2ReqAlarmMemoryDetail
+          if(Response === 0xFE){
+            this.ReadMode2ReqAlarmMemoryDetail_CF01(Data, LastQueue[3]);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmMemoryDetail: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmMemoryDetail: ' + Data);
+            }
+          }
+          break;
+
+
 
         case 0x24: // PanelConfiguredAreas
           if(Response === 0xFE){
@@ -389,10 +440,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x26: // Mode2ReqAreaStatus
           if(Response === 0xFE){
-            this.ReadMode2ReqAreaStatus(Data);
+            if(this.LegacyMode){
+              this.ReadMode2ReqAreaStatus_CF01(Data);
+            } else{
+              this.ReadMode2ReqAreaStatus_CF02(Data);
+            }
           }else{
             if(Response === 0xFD){
-              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAreaStatus: ' + BGNegativeAcknowledgement[Data[2]]);
+              this.emit('ControllerError', BGControllerError.BoschPanelError,
+                'Mode2ReqAreaStatus_CF02: ' + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAreaStatus: ' + Data);
             }
@@ -413,12 +469,30 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x29: // Mode2ReqAreaText
           if(Response === 0xFE){
-            this.ReadMode2ReqAreaText(Data);
+            const LastArea = LastQueue[4];
+            if(this.LegacyMode){
+              this.ReadMode2ReqAreaText_CF01(Data, LastArea);
+            } else{
+              this.ReadMode2ReqAreaText_CF03(Data);
+            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAreaText: ' + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAreaText: ' + Data);
+            }
+          }
+          break;
+
+        case 0x31: // SendMode2ReqOutputStatus
+          if(Response === 0xFE){
+            this.ReadMode2ReqOutputStatus(Data);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'SendMode2ReqOutputStatus: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'SendMode2ReqOutputStatus: ' + Data);
             }
           }
           break;
@@ -438,7 +512,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x3C: // Mode2ReqPointText
           if(Response === 0xFE){
-            this.ReadMode2ReqPointText(Data);
+            if(this.LegacyMode){
+              const LastPoint = LastQueue[4];
+              this.ReadMode2ReqPointText_CF01(Data, LastPoint);
+            } else{
+              this.ReadMode2ReqPointText_CF03(Data);
+            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqPointText: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -451,7 +530,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x30: // Mode2ReqConfiguredOutputs
           if(Response === 0xFE){
             this.ReadMode2ReqConfiguredOutputs(Data);
-            this.SendMode2ReqAreaText(0);
+
+            if(this.LegacyMode){
+              this.SendMode2ReqAreaText_CF01();
+              this.SendMode2ReqPointText_CF01();
+              this.SendMode2ReqOutputText_CF01();
+            } else{
+              this.SendMode2ReqAreaText_CF03(0);
+            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqConfiguredOutputs: '
@@ -464,7 +550,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x32: // Mode2SetOutputState
           if(Response === 0xFC){
-            this.ReadMode2SetOutputState();
+            if(this.LegacyMode){
+              this.ReadMode2SetOutputState_CF01();
+            } else{
+              this.ReadMode2SetOutputState_CF02();
+            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2SetOutputState:' + BGNegativeAcknowledgement[Data[2]]);
@@ -476,12 +566,45 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x33: // Mode2ReqOutputText
           if(Response === 0xFE){
-            this.ReadMode2ReqOutputText(Data);
+
+            if(this.LegacyMode){
+              const LastOutput = LastQueue[3];
+              this.ReadMode2ReqOutputText_CF01(Data, LastOutput);
+            } else{
+              this.ReadMode2ReqOutputText_CF03(Data);
+            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqOutputText: ' + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqOutputText: ' + Data);
+            }
+          }
+          break;
+
+
+        case 0x38: //ReadMode2ReqPointsStatus
+          if(Response === 0xFE){
+            this.ReadMode2ReqPointsStatus(Data);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError,
+                'ReadMode2ReqPointsStatus: ' + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'ReadMode2LoginRSCUser: ' + Data);
+            }
+          }
+          break;
+
+        case 0x3E: // ReadMode2LoginRSCUser
+          if(Response === 0xFE){
+            this.SendMode2ReqPanelCapacitie();
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError,
+                'ReadMode2LoginRSCUser: ' + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'ReadMode2LoginRSCUser: ' + Data);
             }
           }
           break;
@@ -539,7 +662,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             Priority = Priority + 0;
             let AlarmCount = (Data[++i] << 8) + Data[++i];
             AlarmCount = AlarmCount + 0;
-            this.SendMode2ReqAreaStatus();
+            this.SendMode2ReqAreaStatus_CF02();
           }
 
           // Area On Off Sate
@@ -685,6 +808,80 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
     }
 
+    // Function SendMode2LoginRSCUser
+    // User Based Remote Access Connection Only
+    // Command Format 1
+    // Supported in protocol version 1.14
+    //
+    private SendMode2LoginRSCUser(){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2LoginRSCUser, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      // Check passcode length
+      if(this.Passcode.length < 3 || this.Passcode.length > 8){
+        this.emit('ControllerError', BGControllerError.PasscodeLengthError, 'Invalid Passcode Length');
+        return;
+      }
+
+      // Check passcode
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x3E]);
+      const CommandFormat = new Uint8Array([]);
+
+      const PasscodeMSB1 = Number(this.Passcode[0]) << 4;
+      const PasscodeMSB2 = Number(this.Passcode[1]);
+      const PasscodeMSB = PasscodeMSB1 + PasscodeMSB2;
+
+      const PasscodeBody1 = Number(this.Passcode[2]) << 4;
+
+      let PasscodeBody2 = 0xF;
+      if(this.Passcode.length >= 4){
+        PasscodeBody2 = Number(this.Passcode[3]);
+      }
+
+      let PasscodeBody3 = 0xF;
+      if(this.Passcode.length >= 5){
+        PasscodeBody3 = Number(this.Passcode[4]);
+      }
+      PasscodeBody3 = PasscodeBody3 << 4;
+
+      let PasscodeBody4 = 0xF;
+      if(this.Passcode.length >= 6){
+        PasscodeBody4 = Number(this.Passcode[5]);
+      }
+
+      let PasscodeLSB1 = 0xF;
+      if(this.Passcode.length >= 7){
+        PasscodeLSB1 = Number(this.Passcode[6]);
+      }
+      PasscodeLSB1 = PasscodeLSB1 << 4;
+
+      let PasscodeLSB2 = 0xF;
+      if(this.Passcode.length >= 8){
+        PasscodeLSB2 = Number(this.Passcode[7]);
+      }
+
+      const PasscodeLSB = PasscodeLSB1 + PasscodeLSB2;
+      //const Data = new Uint8Array([PasscodeMSB, PasscodeBody1 + PasscodeBody2, PasscodeBody3+PasscodeBody4, PasscodeLSB]);
+      const Data = new Uint8Array([PasscodeMSB, PasscodeBody1 + PasscodeBody2, PasscodeBody3+PasscodeBody4, PasscodeLSB]);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+
+    }
+
+    // Function ReadMode2LoginRSCUser
+    // User Based Remote Access Connection Only
+    // Command Format 1
+    // Supported in protocol version 1.14
+    //
+    private ReadMode2LoginRSCUser(){
+      return;
+    }
+
     // Function SendMode2ReqConfiguredAreas
     // Return all configured areas the user has authority over in the panel,
     // Supported in protocol version 1.14
@@ -694,6 +891,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x24]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2LoginRSCUser, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
@@ -737,6 +942,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x1F]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPanelCapacitie, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
@@ -751,6 +964,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.MaxUsers = (Data[9] * 255) + Data[10];
       this.MaxKeypads = Data[11];
       this.MaxDoors = Data[12];
+      this.EventDataLength = Data[13];
     }
 
     // Function SendModeWhatAreYou
@@ -774,7 +988,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private ReadMode2WhatAreYou(Data: Buffer){
       this.PanelType = Data[2];
       this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + 255 * Data[6]);
-      this.PanelIntrusionIntegrationProtocolVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + 255 * Data[10]);
+      this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + 255 * Data[10]);
       this.PanelExecuteProtocolVersion = new BGProtocolVersion(Data[11], Data[12], Data[13] + 255 * Data[14]);
 
       this.PanelBusyFlag = false;
@@ -787,13 +1001,80 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.PanelBusyFlag = true;
         this.emit('ControllerError', BGControllerError.PanelBusy, 'Mode2WhatAreYou: Max Automation Users In Use');
       }
+
+      if(this.PanelType ===BGPanelType.Solution2000 ||
+        this.PanelType === BGPanelType.Solution3000 ||
+        this.PanelType === BGPanelType.AMAX2100 ||
+        this.PanelType === BGPanelType.AMAX3000 ||
+        this.PanelType === BGPanelType.AMAX4000
+      ){
+        this.LegacyMode = true;
+      }
+
+      if(this.ForleLegacyMode){
+        this.LegacyMode = true;
+      }
+    }
+
+    // Function SendMode2ReqAreaText_CF01
+    // This command retrieves area text for the specified area
+    // Supported in protocol version 1.23
+    //
+    SendMode2ReqAreaText_CF01(){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAreaText_CF1, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x29]);
+      const CommandFormat = new Uint8Array([]);
+
+      for (const Area in this.Areas){
+        const High = (Number(Area) >> 8) & 0xFF;
+        const Low = Number(Area) & 0xFF;
+        const Data = new Uint8Array([High, Low, 0]);
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
+    }
+
+    // Function ReadMode2ReqAreaText_CF01
+    // This command retrieves area text for the specified area
+    // Supported in protocol version 1.23
+    //
+    ReadMode2ReqAreaText_CF01(Data: Buffer, AreaNumber: number){
+
+      let i = 2;
+      let AreaText = '';
+      while(Data[i] !== 0x00){
+        const Read = Data[i];
+        AreaText += String.fromCharCode(Read);
+        i++;
+      }
+
+      if(this.Areas[AreaNumber]!== undefined){
+        this.Areas[AreaNumber].AreaText = AreaText;
+      }
+
+      return;
     }
 
     // Function SendMode2ReqAreaText
     // This command retrieves area text for the specified area
-    // Supported in protocol version 1.23
+    // Supported in protocol version 2.5
     //
-    SendMode2ReqAreaText(LastAreaRead: number){
+    SendMode2ReqAreaText_CF03(LastAreaRead: number){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(2, 5, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPanelCapacitie, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x29]);
       const CommandFormat = new Uint8Array([]);
@@ -805,17 +1086,17 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
-    // Function ReadMode2ReqAreaText
+    // Function ReadMode2ReqAreaText_CF03
     // This command retrieves area text for the specified area
-    // Supported in protocol version 1.23
+    // Supported in protocol version 2.5
     //
-    ReadMode2ReqAreaText(Data: Buffer){
+    ReadMode2ReqAreaText_CF03(Data: Buffer){
 
       const DataLength = Data[0];
 
       // No more data to be read, all point text has been received from panel
       if(DataLength <= 1){
-        this.SendMode2ReqPointText(0);
+        this.SendMode2ReqPointText_CF03(0);
         return;
       }
 
@@ -835,7 +1116,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             Area.AreaText = AreaText;
 
             if(i === DataLength){
-              this.SendMode2ReqAreaText(AreaNumber);
+              this.SendMode2ReqAreaText_CF03(AreaNumber);
               return;
             }
             break;
@@ -852,6 +1133,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x36]);
       const CommandFormat = new Uint8Array([]);
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPointsInArea, Expecting IIP version >= ' + MinVersion.toSring());
+      }
 
       for (const AreaNumber in this.Areas){
         const Data = new Uint8Array([0, Number(AreaNumber)]);
@@ -884,12 +1172,66 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
     }
 
-    // Function SendMode2ReqPointText()
+    // Function SendMode2ReqPointText_CF01()
+    // Returns the text for multiple points
+    // Supported in Protocol Version 1.14
+    // Command format 1
+    //
+    SendMode2ReqPointText_CF01(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPointText_CF01, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x3C]);
+      const CommandFormat = new Uint8Array([]);
+
+      for(const Point in this.Points){
+        const High = (Number(Point) >> 8) & 0xFF;
+        const Low = Number(Point) & 0xFF;
+        const Data = new Uint8Array([High, Low, 0]);
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
+    }
+
+    // Function ReadMode2ReqPointText_CF01()
+    // Returns the text for multiple points
+    // Supported in Protocol Version 1.14
+    // Command format 1
+    //
+    ReadMode2ReqPointText_CF01(Data: Buffer, PointNumber){
+      let i = 2;
+      let PointText = '';
+      while(Data[i] !== 0x00){
+        const Read = Data[i];
+        PointText += String.fromCharCode(Read);
+        i++;
+      }
+
+      if(this.Points[PointNumber]!== undefined){
+        this.Points[PointNumber].PointText = PointText;
+      }
+
+      return;
+    }
+
+    // Function SendMode2ReqPointText_CF03()
     // Returns the text for multiple points
     // Supported in Protocol Version 2.5
-    // Command option 1
+    // Command format 3
     //
-    SendMode2ReqPointText(LastPointRead: number){
+    SendMode2ReqPointText_CF03(LastPointRead: number){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(2, 5, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPointText_CF03, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x3C]);
       const CommandFormat = new Uint8Array([]);
@@ -901,18 +1243,18 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
-    // Function ReadMode2ReqPointText()
+    // Function ReadMode2ReqPointText_CF03()
     // Returns the text for multiple points
     // Supported in Protocol Version 2.5
-    // Command option 1
+    // Command format 3
     //
-    ReadMode2ReqPointText(Data: Buffer){
+    ReadMode2ReqPointText_CF03(Data: Buffer){
 
       const DataLength = Data[0];
 
       // No more data to be read, all point text has been received from panel
       if(DataLength <= 1){
-        this.SendMode2ReqOutputText(0);
+        this.SendMode2ReqOutputText_CF03(0);
         return;
       }
 
@@ -932,7 +1274,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             Point.PointText = PointText;
 
             if(i === DataLength){
-              this.SendMode2ReqPointText(PointNumber);
+              this.SendMode2ReqPointText_CF03(PointNumber);
               return;
             }
             break;
@@ -950,6 +1292,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x30]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([]);
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqConfiguredOutputs, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
@@ -976,7 +1326,77 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
     }
 
-    private SendMode2ReqOutputText(OutputNumber: number){
+    // Function SendMode2ReqOutputText_CF01()
+    // This command retrieves output text
+    // Supported in Protocol Version 1.14
+    // Command Format 1
+    private SendMode2ReqOutputText_CF01(){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqOutputText_CF01, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      // If no output are configured on the panel, return and start panel operation.
+      const length = Object.keys(this.Outputs).length;
+      if(length === 0){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
+        return;
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x33]);
+      const CommandFormat = new Uint8Array([]);
+
+      for (const Output in this.Outputs){
+        const Data = new Uint8Array([ Number(Output) & 0xFF, 0]);
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
+    }
+
+    private ReadMode2ReqOutputText_CF01(Data:Buffer, OutputNumber:number){
+      let i = 2;
+      let OutputText = '';
+      while(Data[i] !== 0x00){
+        const Read = Data[i];
+        OutputText += String.fromCharCode(Read);
+        i++;
+      }
+
+      if(this.Outputs[OutputNumber]!== undefined){
+        this.Outputs[OutputNumber].OutputText = OutputText;
+      }
+
+      const keys2 = Object.keys(this.Outputs);
+      const LastOuputNumber = keys2[keys2.length-1];
+
+      if(Number(LastOuputNumber) === OutputNumber){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
+      }
+      return;
+    }
+
+    // Function SendMode2ReqOutputText_CF03()
+    // This command retrieves output text
+    // Supported in Protocol Version 2.5
+    //
+    private SendMode2ReqOutputText_CF03(OutputNumber: number){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(2, 5, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqOutputText_CF03, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x33]);
       const CommandFormat = new Uint8Array([]);
@@ -986,7 +1406,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
-    private ReadMode2ReqOutputText(Data:Buffer){
+    private ReadMode2ReqOutputText_CF03(Data:Buffer){
 
       const DataLength = Data[0];
 
@@ -1015,7 +1435,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             Output.OutputText = OutputText;
 
             if(i === DataLength){
-              this.SendMode2ReqOutputText(OutputNumber);
+              this.SendMode2ReqOutputText_CF03(OutputNumber);
               return;
             }
             break;
@@ -1024,19 +1444,57 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
     }
 
-    // Function SendMode2SetOutputState()
+    // Function SendMode2SetOutputState_CF01()
     // Set output state
-    // Supported in Protocol Version 2.5
+    // Supported in Protocol Version 1.14
     //
-    private SendMode2SetOutputState(OutputNumber: number, OutputState: boolean){
+    private SendMode2SetOutputState_CF01(OutputNumber: number, OutputState: boolean){
 
-      // Check for valid Output
-      // TODO
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2SetOutputState_CF01, Expecting IIP version >= ' + MinVersion.toSring());
+      }
 
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x32]);
       const CommandFormat = new Uint8Array([]);
+      const Number = OutputNumber & 0xFF;
 
+      let State = 0;
+      if(OutputState){
+        State = 1;
+      }
+
+      const Data = new Uint8Array([Number, State]);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2SetOutputState_CF01()
+    // Set output state
+    // Supported in Protocol Version 1.14
+    //
+    private ReadMode2SetOutputState_CF01(){
+      return;
+    }
+
+    // Function SendMode2SetOutputState_CF02()
+    // Set output state
+    // Supported in Protocol Version 2.5
+    //
+    private SendMode2SetOutputState_CF02(OutputNumber: number, OutputState: boolean){
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(2, 5, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2SetOutputState_CF02, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x32]);
+      const CommandFormat = new Uint8Array([]);
       const MSB = (OutputNumber >> 8) & 0xFF;
       const LSB = OutputNumber & 0xFF;
 
@@ -1049,16 +1507,76 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
     }
 
-    // Function ReadMode2SetOutputState()
+    // Function ReadMode2SetOutputState_CF02()
     // Set output state
     // Supported in Protocol Version 2.5
     //
-    private ReadMode2SetOutputState(){
+    private ReadMode2SetOutputState_CF02(){
       return;
     }
 
+    // Function  SendMode2ReqAreaStatus_CF01()
+    // Return Area status
+    // Supported in Protocol Version 1.23
+    //
+    private SendMode2ReqAreaStatus_CF01(){
 
-    private SendMode2ReqAreaStatus(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAreaStatus_CF01, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const MaxPair = 50;
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x26]);
+      const CommandFormat = new Uint8Array([]);
+
+      let Data = new Uint8Array();
+
+      for( const AreaNumber in this.Areas){
+        const High = (Number(AreaNumber) >> 8) & 0xFF;
+        const Low = Number(AreaNumber) & 0xFF;
+        const Value = [High, Low];
+
+        const Temp = new Uint8Array(Data.length + Value.length);
+        Temp.set(Data, 0);
+        Temp.set(Value, Data.length);
+        Data = Temp;
+
+        if((Data.length) / 2 >= MaxPair){
+          this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+          Data = new Uint8Array();
+        }
+      }
+
+      if(Data.length > 0){
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
+    }
+
+    // Function  ReadMode2ReqAreaStatus_CF01()
+    // Return Area status
+    // Supported in Protocol Version 1.23
+    //
+    private ReadMode2ReqAreaStatus_CF01(Data:Buffer){
+      Data = Data.slice(2, Data.length);
+
+      for(let i = 0 ; i < Data.length/3 ; i++){
+        const High = Data[i*3];
+        const Low = Data[(i*3) + 1];
+        const Status = Data[(i*3)+2];
+        const AreaNumber = (High << 8) + Low;
+        const Area = this.Areas[AreaNumber];
+        if(Area.AreaStatus !== Status){
+          Area.AreaStatus = Status;
+          this.emit('AreaOnOffStateChange', Area);
+        }
+      }
+    }
+
+    private SendMode2ReqAreaStatus_CF02(){
       // Command Format 2
 
       // Max area per request
@@ -1083,7 +1601,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), false);
     }
 
-    private ReadMode2ReqAreaStatus(Data:Buffer){
+    private ReadMode2ReqAreaStatus_CF02(Data:Buffer){
 
       const length = Data[0];
       const it = (length - 1) /5;
@@ -1153,7 +1671,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 5.207
     // Command Format 3
     //
-    SendMode2SetSubscriptions(){
+    private SendMode2SetSubscriptions(){
 
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x5F]);
@@ -1188,6 +1706,256 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private ReadMode2SetSubscriptions(){
       this.PanelReceivingNotifcation = true;
       this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
+    }
+
+    // Function SendMode2ReqPointsStatus()
+    // This returns a list of up to 66 pairs of point numbers and their status
+    // Supported in Protocol Version 1.14
+    //
+    private SendMode2ReqPointsStatus(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPointsStatus, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const MaxPair = 66;
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x38]);
+      const CommandFormat = new Uint8Array([]);
+
+      let Data = new Uint8Array();
+
+      for( const PointNumber in this.Points){
+        const High = (Number(PointNumber) >> 8) & 0xFF;
+        const Low = Number(PointNumber) & 0xFF;
+        const Value = [High, Low];
+
+        const Temp = new Uint8Array(Data.length + Value.length);
+        Temp.set(Data, 0);
+        Temp.set(Value, Data.length);
+        Data = Temp;
+
+        if((Data.length) / 2 >= MaxPair){
+          this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+          Data = new Uint8Array();
+        }
+      }
+
+      if(Data.length > 0){
+        this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+      }
+    }
+
+    // Function ReadMode2ReqPointsStatus()
+    // This returns a list of up to 66 pairs of point numbers and their status
+    // Supported in Protocol Version 1.14
+    //
+    private ReadMode2ReqPointsStatus(Data:Buffer){
+      Data = Data.slice(2, Data.length);
+      const Pair = Data.length/3;
+
+      for(let i = 0; i<Pair ; i++){
+        const High = Data[i*3];
+        const Low = Data[(i*3)+1];
+        const NewStatus = Data[(i*3)+2];
+        const Number = (High << 8) + Low;
+
+
+        const Point = this.Points[Number];
+        if(Point !== undefined){
+          if(Point.UpdateStatus(NewStatus)){
+            this.emit('PointStatusChange', Point);
+          }
+        }
+      }
+      return;
+    }
+
+    // Function SendMode2ReqAlarmMemorySummary_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private SendMode2ReqAlarmMemorySummary_CF01(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 24, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAlarmMemorySummary, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x08]);
+      const CommandFormat = new Uint8Array([]);
+      const Data = new Uint8Array();
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2ReqAlarmMemorySummary()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private ReadMode2ReqAlarmMemorySummary_CF01(Data:Buffer){
+      Data = Data.slice(2, Data.length);
+      let AlarmDetected = false;
+
+      const PriorityAlarmCount:number[] = [];
+      for(let i = 0 ; i < 10 ; i++){
+        const AlarmCount = (Data[i*2] << 8) + Data[(i*2)+1];
+        PriorityAlarmCount.push(AlarmCount);
+        if(AlarmCount !== 0){
+          AlarmDetected = true;
+        }
+      }
+
+      // No active alam of panel, clear everything
+      if(!AlarmDetected){
+        for( const AreaNumber in this.Areas){
+          const Area = this.Areas[AreaNumber];
+          if(Area.ClearAlarm()){
+            this.emit('AreaAlarmStateChange', Area);
+          }
+        }
+        setTimeout(() => {
+          this.PoolPanel();
+        }, this.PoolInterval);
+        return;
+      }
+
+      // If alarm count not zero, get alarm details
+      for(let AlarmPriority = 10 ;AlarmPriority > 0 ; AlarmPriority--){
+        this.SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority, 0, 0);
+      }
+    }
+
+    // Function Send Mode2ReqAlarmMemoryDetail_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.23
+    //
+    private SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority:BGAlarmPriority, LastArea:number, LastPoint:number){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAlarmMemoryDetail, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x23]);
+      const CommandFormat = new Uint8Array([]);
+      let Data = new Uint8Array([AlarmPriority]);
+
+      if(LastArea !== 0 && LastPoint !== 0){
+        Data = new Uint8Array([AlarmPriority, (LastArea >> 8) & 0xFF, LastArea & 0xFF, (LastPoint >> 8) & 0xFF, LastPoint & 0xFF ]);
+      }
+
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2ReqAlarmMemoryDetail_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private ReadMode2ReqAlarmMemoryDetail_CF01(Data:Buffer, AlarmPriority:BGAlarmPriority){
+      Data = Data.slice(2, Data.length);
+
+      // No alarm on panel for that AlarmPriority
+      // Remove that alarm priority from every area on panel
+      if(Data.length === 0){
+        for(const AreaNumber in this.Areas){
+          const Area = this.Areas[AreaNumber];
+
+          // Fire event emitter if a change was notice
+          if(Area.RemoveAlarm(AlarmPriority)){
+            this.emit('AreaAlarmStateChange', Area);
+          }
+        }
+      }
+
+      const ChunkLength = 5;
+      const Chunk = Data.length / ChunkLength;
+
+      for(let i = 0 ; i < Chunk ; i ++){
+        const Detail = Data.slice(i*ChunkLength, i*ChunkLength + ChunkLength);
+        const AreaNumber = (Detail[0] << 8) + Detail[1];
+        //const ItemType = Detail[2];
+        const ItemPointKeypadUser = (Detail[3] << 8) + Detail[4];
+
+        // More data to come
+        if(ItemPointKeypadUser === 0xFFFF){
+          const LastDetail = Data.slice((i-1)*ChunkLength, (i-1)*ChunkLength + ChunkLength);
+          const LastArea = ( LastDetail[0] << 8) + LastDetail[1];
+          const LastItemPointKeypadUser = (LastDetail[3] << 8) + LastDetail[4];
+          this.SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority, LastArea, LastItemPointKeypadUser);
+        }
+
+
+        const Area = this.Areas[AreaNumber];
+        if(Area.AddAlarm(AlarmPriority)){
+          this.emit('AreaAlarmStateChange', Area);
+        }
+      }
+
+      if(AlarmPriority === 1){
+        setTimeout(() => {
+          this.PoolPanel();
+        }, this.PoolInterval);
+      }
+
+    }
+
+    // Function SendMode2ReqOutputStatus()
+    // Return panel outputs
+    // Supported in Protocol Version 1.14
+    //
+    private SendMode2ReqOutputStatus(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqOutputStatus, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x31]);
+      const CommandFormat = new Uint8Array([]);
+      const Data = new Uint8Array([]);
+
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2ReqOutputStatus()
+    // Return panel outputs
+    // Supported in Protocol Version 1.14
+    //
+    private ReadMode2ReqOutputStatus(Data:Buffer){
+      Data = Data.slice(2, Data.length);
+
+      for (const OutputNumer in this.Outputs){
+        const Output = this.Outputs[OutputNumer];
+        const Num = Number(OutputNumer);
+        const Index = Math.floor(Num/8);
+
+        // If response if empty, no active output on panel
+        let NewStatus = false;
+
+        if(Index < Data.length){
+          const Byte = Data[Index];
+          const Residu = Num - (Index * 8);
+          NewStatus = ((Byte & Math.pow(2, 8-Residu)) > 0);
+        }
+
+        if(Output.OutputState !== NewStatus || this.InitialRun === true){
+          Output.OutputState = NewStatus;
+          this.emit('OutputStateChange', Output);
+        }
+      }
+      this.InitialRun = false;
     }
 
     private FormatCommand(Protocol:Uint8Array, Command:Uint8Array, CommandFormat: Uint8Array, Data: Uint8Array){

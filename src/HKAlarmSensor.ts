@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 import { BGController } from './BGController';
-import { BGAlarmType } from './BGArea';
+import { BGAlarmPriority } from './BGArea';
 
 export class HKAlarmSensor {
   private service: Service;
@@ -38,19 +38,19 @@ export class HKAlarmSensor {
 
         switch (this.MonitoringEvent) {
           case 'Fire':
-            this.UpdateStatus(Area.FireAlarm === BGAlarmType.Alarm);
+            this.UpdateStatus(Area.GetFireAlarm().indexOf(BGAlarmPriority.FireAlarm) !== -1 );
             break;
 
           case 'Burglary':
-            this.UpdateStatus(Area.BurglaryAlarm === BGAlarmType.Alarm);
+            this.UpdateStatus(Area.GetBurglaryAlarm().indexOf(BGAlarmPriority.BurgAlarm) !== -1 );
             break;
 
           case 'Personnal':
-            this.UpdateStatus(Area.PersonnalAlarm === BGAlarmType.Alarm);
+            this.UpdateStatus(Area.GetPersonnalAlarm().indexOf(BGAlarmPriority.PersonalEmergency) !== -1 );
             break;
 
           case 'Gaz':
-            this.UpdateStatus(Area.GazAlarm === BGAlarmType.Alarm);
+            this.UpdateStatus(Area.GetGazAlarm().indexOf(BGAlarmPriority.GasAlarm) !== -1 );
             break;
 
           default:

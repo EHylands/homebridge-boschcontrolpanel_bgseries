@@ -28,6 +28,12 @@
         "required": true,
         "default": ""
       },
+      "ForceLegacyMode":{
+        "title":"Force Legacy Mode",
+        "type": "boolean",
+        "required": true,
+        "default": false
+      },
       "MasterFireAlarm":{
         "title":"Master Fire Alarm",
         "type": "boolean",
@@ -193,7 +199,8 @@
           "items": [
             "Host", 
             "Port",
-            "Passcode"
+            "Passcode",
+            "ForceLegacyMode"
           ]
         }
       ]

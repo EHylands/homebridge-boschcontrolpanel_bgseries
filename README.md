@@ -18,6 +18,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 * [Bosch B Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf)
 * [Bosch G Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf)
+* [Bosch Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) Experimental support with Legacy Mode
 
 ## Bosch Control Panel Configuration
 
@@ -40,6 +41,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * `Host`:  Bosch Control Panel IP address
 * `Port`:  Bosch Control Panel Port number (defaults to 7700)
 * `Automation passcode`: Value as configured on your Bosch Control Panel
+* `Force Legacy Mode`: Force plugin to use first generation protocol
 ### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
@@ -66,6 +68,13 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 * `Area Arming Status Notifications`: Show Areas Arming status in log file
 
 ## Operation
+### Legacy Mode:
+In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
+* Expect plugin longer start time 
+* Plugin will pool the panel rather then use push notifications (subscritions).
+* Legacy mode is used for solution 2000/3000 panel
+* Legacy mode can be force in configuration page 
+
 ### Security System Accessory:
 The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 
 
@@ -75,12 +84,6 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Away | All On Delay
 | Night | Part On Instant
 | Home | Part On Delay
-
-# Releases
-## 0.4.2
-* Adding support for Security System accessory `Area(s) in Scope` and `Passcode Follows Scope` options
-* Adding Log File configuration options
-* General code maintenance
 
 # Disclaimer
 This is Beta software. Not to be relied upon for life or mission critical applications.

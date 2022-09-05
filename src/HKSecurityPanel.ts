@@ -98,6 +98,8 @@ export class HKSecurityPanel {
       AreaToArm = this.AreaInScope;
     }
 
+    const Panel = this.platform.Panel;
+
     switch(value){
       case this.platform.Characteristic.SecuritySystemTargetState.DISARM:{
         this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.Disarm);
@@ -105,16 +107,52 @@ export class HKSecurityPanel {
       }
 
       case this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM:{
-        this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.MasterDelayArm);
+
+        if(Panel.PanelType === BGPanelType.Solution2000 ||
+           Panel.PanelType === BGPanelType.Solution3000 ||
+           Panel.PanelType === BGPanelType.AMAX2100 ||
+           Panel.PanelType === BGPanelType.AMAX3000 ||
+           Panel.PanelType === BGPanelType.AMAX4000){
+          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.AwayArm);
+        } else{
+          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.MasterDelayArm);
+        }
+
         break;
       }
 
       case this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM:{
+
+        if(
+          Panel.PanelType === BGPanelType.AMAX2100 ||
+          Panel.PanelType === BGPanelType.AMAX3000 ||
+          Panel.PanelType === BGPanelType.AMAX4000){
+          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          break;
+        }
+
+        if(Panel.PanelType === BGPanelType.Solution2000 ||
+          Panel.PanelType === BGPanelType.Solution3000){
+          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm2);
+          break;
+
+        }
+
         this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterInstantArm);
         break;
       }
 
       case this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM:{
+
+        if(Panel.PanelType === BGPanelType.Solution2000 ||
+          Panel.PanelType === BGPanelType.Solution3000 ||
+          Panel.PanelType === BGPanelType.AMAX2100 ||
+          Panel.PanelType === BGPanelType.AMAX3000 ||
+          Panel.PanelType === BGPanelType.AMAX4000){
+          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          break;
+        }
+
         this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterDelayArm);
         break;
       }
@@ -159,6 +197,26 @@ export class HKSecurityPanel {
 
       case BGAreaStatus.PartOnInstant:{
         return this.platform.Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+      }
+
+      case BGAreaStatus.StayArm1On:{
+        return this.platform.Characteristic.SecuritySystemCurrentState.STAY_ARM;
+      }
+
+      case BGAreaStatus.StayArm2On:{
+        return this.platform.Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+      }
+
+      case BGAreaStatus.AwayOn:{
+        return this.platform.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+      }
+
+      case BGAreaStatus.AwayExitDelay:{
+        return this.platform.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+      }
+
+      case BGAreaStatus.AwayEntryDelay:{
+        return this.platform.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
       }
 
       case BGAreaStatus.Unknown:{
@@ -207,10 +265,29 @@ export class HKSecurityPanel {
         return this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM;
       }
 
+      case BGAreaStatus.StayArm1On:{
+        return this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM;
+      }
+
+      case BGAreaStatus.StayArm2On:{
+        return this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+      }
+
+      case BGAreaStatus.AwayOn:{
+        return this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM;
+      }
+
+      case BGAreaStatus.AwayEntryDelay:{
+        return this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM;
+      }
+
+      case BGAreaStatus.AwayExitDelay:{
+        return this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM;
+      }
+
       case BGAreaStatus.Unknown:{
         // throw error
         return this.platform.Characteristic.SecuritySystemTargetState.DISARM;
-        break;
       }
     }
   }
