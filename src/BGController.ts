@@ -1,6 +1,6 @@
 import { BGPoint } from './BGPoint';
 import { BGOutput } from './BGOutput';
-import { BGArmingType, BGArea } from './BGArea';
+import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
@@ -104,27 +104,6 @@ enum MaxConnectionsInUseFlags {
   MaxRPSAlinkusersInUse = 0x01
 }
 
-export enum BGAlarmPriority{
-  BurgTrouble = 1,
-  BurgSupervisory = 2,
-  GasTrouble = 3,
-  GasSupervisory = 4,
-  FireTrouble = 5,
-  FireSupervisory = 6,
-  BurgAlarm = 7,
-  PersonalEmergency = 8,
-  GasAlarm = 9,
-  FireAlarm = 10,
-  BurglaryTamper = 11,
-  BurglaryFault = 12,
-  TechnicalFireAlarm = 13,
-  TechnicalFireTamper = 14,
-  TechnicalFireFault = 15,
-  TechnicalGasAlarm = 16,
-  TechnicalGasTamper = 17,
-  TechnicalGasFault =19
-}
-
 export interface BoschControllerMode2Event {
   'PanelReadyForOperation': (PanelReady: boolean) => void;
   'PanelReceivingNotifiation': (PanelReceivingNotification:boolean) => void;
@@ -158,13 +137,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     readonly BoschMaxCommandBytes = 236;
     readonly BoschMaxNotificationMessageBytes = 480;
 
-    // Mininum protocol supported version
-    readonly MinimumIntrusionIntegrationProtocolVersion = new BGProtocolVersion(5, 208, 0);
-
     // Current Panel related variables
     PanelRPSProtocolVersion = new BGProtocolVersion(0, 0, 0);
-    PanelIIPVersion = new BGProtocolVersion(0, 0, 0);
     PanelExecuteProtocolVersion = new BGProtocolVersion(0, 0, 0);
+    PanelIIPVersion = new BGProtocolVersion(0, 0, 0);
     PanelBusyFlag = false;
     PanelType = BGPanelType.Undefined;
     MaxAreas = 0;
@@ -184,14 +160,21 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     private PanelReadyForOperation = false;
     private PanelReceivingNotifcation = false;
-    LegacyMode = false;
-    private InitialRun = true;
 
-    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string) {
+    // Legacy options
+    private InitialRun = true;
+    private PoolInterval = 500;
+    private ForleLegacyMode = false;
+    private EventDataLength = 0;
+    LegacyMode = false;
+
+
+    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
       this.Host = Host;
       this.Port = Port;
       this.Passcode = Passcode;
+      this.ForleLegacyMode = ForceLegacyMode;
       this.UserType = UserType;
       this.Socket = new net.Socket();
       this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
@@ -241,6 +224,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             this.ReadProtocolMessage_0x02(Data);
             break;
           }
+
+          default:{
+            this.emit('ControllerError', BGControllerError.InvalidProtocol,
+              'Received unknown protocol number from panel');
+          }
         }
       });
 
@@ -276,20 +264,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.PoolPanel();
       } else{
         this.SendMode2SetSubscriptions();
-        //  polling the panel
       }
     }
 
     private PoolPanel(){
-      const Timer = 2000;
       this.SendMode2ReqPointsStatus();
       this.SendMode2ReqOutputStatus();
       this.SendMode2ReqAreaStatus_CF01();
-
-      setTimeout(() => {
-        this.PoolPanel();
-      }, Timer);
-
+      this.SendMode2ReqAlarmMemorySummary_CF01();
     }
 
     private QueueProtocolCommand_0x01(Command:Uint8Array, AllowDuplicate:boolean){
@@ -366,7 +348,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             }
           }else{
             if(Response === 0xFD){
-              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2WhatAreYou: ' + BGNegativeAcknowledgement[Data[2]]);
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2WhatAreYou: '
+              + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2WhatAreYou: ' + Data);
             }
@@ -398,6 +381,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }
           break;
 
+        case 0x08: // Mode2ReqAlarmMemorySummary;
+          if(Response === 0xFE){
+            this.ReadMode2ReqAlarmMemorySummary_CF01(Data);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmMemorySummary: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmMemorySummary: '
+              + Data);
+            }
+          }
+          break;
+
         case 0x1F: // Mode2Capacitie
           if(Response === 0xFE){
             this.ReadMode2ReqPanelCapacitie(Data);
@@ -410,6 +407,21 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             }
           }
           break;
+
+        case 0x23: // Mode2ReqAlarmMemoryDetail
+          if(Response === 0xFE){
+            this.ReadMode2ReqAlarmMemoryDetail_CF01(Data, LastQueue[3]);
+          }else{
+            if(Response === 0xFD){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmMemoryDetail: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmMemoryDetail: ' + Data);
+            }
+          }
+          break;
+
+
 
         case 0x24: // PanelConfiguredAreas
           if(Response === 0xFE){
@@ -952,6 +964,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.MaxUsers = (Data[9] * 255) + Data[10];
       this.MaxKeypads = Data[11];
       this.MaxDoors = Data[12];
+      this.EventDataLength = Data[13];
     }
 
     // Function SendModeWhatAreYou
@@ -995,6 +1008,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.PanelType === BGPanelType.AMAX3000 ||
         this.PanelType === BGPanelType.AMAX4000
       ){
+        this.LegacyMode = true;
+      }
+
+      if(this.ForleLegacyMode){
         this.LegacyMode = true;
       }
     }
@@ -1200,7 +1217,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       return;
     }
-
 
     // Function SendMode2ReqPointText_CF03()
     // Returns the text for multiple points
@@ -1749,13 +1765,148 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         const Point = this.Points[Number];
         if(Point !== undefined){
-          if(Point.PointStatus !== NewStatus){
-            Point.PointStatus = NewStatus;
+          if(Point.UpdateStatus(NewStatus)){
             this.emit('PointStatusChange', Point);
           }
         }
       }
       return;
+    }
+
+    // Function SendMode2ReqAlarmMemorySummary_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private SendMode2ReqAlarmMemorySummary_CF01(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 24, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAlarmMemorySummary, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x08]);
+      const CommandFormat = new Uint8Array([]);
+      const Data = new Uint8Array();
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2ReqAlarmMemorySummary()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private ReadMode2ReqAlarmMemorySummary_CF01(Data:Buffer){
+      Data = Data.slice(2, Data.length);
+      let AlarmDetected = false;
+
+      const PriorityAlarmCount:number[] = [];
+      for(let i = 0 ; i < 10 ; i++){
+        const AlarmCount = (Data[i*2] << 8) + Data[(i*2)+1];
+        PriorityAlarmCount.push(AlarmCount);
+        if(AlarmCount !== 0){
+          AlarmDetected = true;
+        }
+      }
+
+      // No active alam of panel, clear everything
+      if(!AlarmDetected){
+        for( const AreaNumber in this.Areas){
+          const Area = this.Areas[AreaNumber];
+          if(Area.ClearAlarm()){
+            this.emit('AreaAlarmStateChange', Area);
+          }
+        }
+        setTimeout(() => {
+          this.PoolPanel();
+        }, this.PoolInterval);
+        return;
+      }
+
+      // If alarm count not zero, get alarm details
+      for(let AlarmPriority = 10 ;AlarmPriority > 0 ; AlarmPriority--){
+        this.SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority, 0, 0);
+      }
+    }
+
+    // Function Send Mode2ReqAlarmMemoryDetail_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.23
+    //
+    private SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority:BGAlarmPriority, LastArea:number, LastPoint:number){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 23, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqAlarmMemoryDetail, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x23]);
+      const CommandFormat = new Uint8Array([]);
+      let Data = new Uint8Array([AlarmPriority]);
+
+      if(LastArea !== 0 && LastPoint !== 0){
+        Data = new Uint8Array([AlarmPriority, (LastArea >> 8) & 0xFF, LastArea & 0xFF, (LastPoint >> 8) & 0xFF, LastPoint & 0xFF ]);
+      }
+
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data), true);
+    }
+
+    // Function ReadMode2ReqAlarmMemoryDetail_CF01()
+    // Returns a list of the number of alarms present (not yet cleared) for
+    // each priority for all areas the user has authority over
+    // Supported in Protocol Version 1.24
+    //
+    private ReadMode2ReqAlarmMemoryDetail_CF01(Data:Buffer, AlarmPriority:BGAlarmPriority){
+      Data = Data.slice(2, Data.length);
+
+      // No alarm on panel for that AlarmPriority
+      // Remove that alarm priority from every area on panel
+      if(Data.length === 0){
+        for(const AreaNumber in this.Areas){
+          const Area = this.Areas[AreaNumber];
+
+          // Fire event emitter if a change was notice
+          if(Area.RemoveAlarm(AlarmPriority)){
+            this.emit('AreaAlarmStateChange', Area);
+          }
+        }
+      }
+
+      const ChunkLength = 5;
+      const Chunk = Data.length / ChunkLength;
+
+      for(let i = 0 ; i < Chunk ; i ++){
+        const Detail = Data.slice(i*ChunkLength, i*ChunkLength + ChunkLength);
+        const AreaNumber = (Detail[0] << 8) + Detail[1];
+        //const ItemType = Detail[2];
+        const ItemPointKeypadUser = (Detail[3] << 8) + Detail[4];
+
+        // More data to come
+        if(ItemPointKeypadUser === 0xFFFF){
+          const LastDetail = Data.slice((i-1)*ChunkLength, (i-1)*ChunkLength + ChunkLength);
+          const LastArea = ( LastDetail[0] << 8) + LastDetail[1];
+          const LastItemPointKeypadUser = (LastDetail[3] << 8) + LastDetail[4];
+          this.SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority, LastArea, LastItemPointKeypadUser);
+        }
+
+
+        const Area = this.Areas[AreaNumber];
+        if(Area.AddAlarm(AlarmPriority)){
+          this.emit('AreaAlarmStateChange', Area);
+        }
+      }
+
+      if(AlarmPriority === 1){
+        setTimeout(() => {
+          this.PoolPanel();
+        }, this.PoolInterval);
+      }
+
     }
 
     // Function SendMode2ReqOutputStatus()
@@ -1799,12 +1950,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           NewStatus = ((Byte & Math.pow(2, 8-Residu)) > 0);
         }
 
-        if(Output.OutputState !== NewStatus || this.InitialRun){
+        if(Output.OutputState !== NewStatus || this.InitialRun === true){
           Output.OutputState = NewStatus;
           this.emit('OutputStateChange', Output);
         }
       }
-
       this.InitialRun = false;
     }
 

@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGController, BGPanelType, BGUserType, BGControllerError } from './BGController';
 import { BGPoint, BGPointStatus} from './BGPoint';
-import { BGAreaStatus, BGAlarmType } from './BGArea';
+import { BGAreaStatus, BGAlarmPriority } from './BGArea';
 import { HKSecurityPanel } from './HKSecurityPanel';
 import { HKMotionSensor } from './HKMotionSensor';
 import { HKContactSensor } from './HKContactSensor';
@@ -31,6 +31,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelHost = '';
   private PanelPort = 14999;
   private PanelPasscode = '';
+  private ForceLegacyMode = false;
   public readonly Panel: BGController;
 
   private PointsArray:Record<number, HKSensor> = {};
@@ -48,11 +49,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
-      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode);
+      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, false);
       return;
     }
 
-    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode);
+    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, this.ForceLegacyMode);
 
     this.api.on('didFinishLaunching', () => {
       this.discoverDevices();
@@ -69,6 +70,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     const Host = this.config.Host;
     const Port = this.config.Port;
     const Passcode = this.config.Passcode;
+    const ForceLegacyMode = this.config.ForceLegacyMode;
+
 
     if(Host !== undefined && Host !== ''){
       if(Port !== undefined && !isNaN(Port)){
@@ -76,6 +79,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           this.PanelHost = Host;
           this.PanelPort = Port;
           this.PanelPasscode = Passcode;
+
+          if(ForceLegacyMode !== undefined){
+            this.ForceLegacyMode = ForceLegacyMode;
+          }
+
           return true;
         }
       }
@@ -355,43 +363,59 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.Panel.on('AreaAlarmStateChange', (Area)=>{
 
       if(Area.GetIsAlarmNominal()){
-        const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): AlarmState: ' + BGAlarmType[Area.FireAlarm];
+        const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): AlarmState: Normal';
         if(this.config.LogAreaAlarm){
           this.log.info(message);
         } else{
           this.log.debug(message);
         }
       } else{
-        if(Area.FireAlarm !== BGAlarmType.Normal){
-          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): FireAlarm: ' + BGAlarmType[Area.FireAlarm];
-          if(this.config.LogAreaAlarm){
-            this.log.info(message);
-          } else{
-            this.log.debug(message);
+
+        const FireAlarm = Area.GetFireAlarm();
+        if(FireAlarm.length > 0){
+          for (const Alarm of FireAlarm){
+            const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Fire - ' + BGAlarmPriority[Alarm];
+            if(this.config.LogAreaAlarm){
+              this.log.info(message);
+            } else{
+              this.log.debug(message);
+            }
           }
         }
-        if(Area.BurglaryAlarm !== BGAlarmType.Normal){
-          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): BurglaryAlarm: ' + BGAlarmType[Area.BurglaryAlarm];
-          if(this.config.LogAreaAlarm){
-            this.log.info(message);
-          } else{
-            this.log.debug(message);
+
+        const BurglaryAlarm = Area.GetBurglaryAlarm();
+        if(BurglaryAlarm.length > 0){
+          for (const Alarm of BurglaryAlarm){
+            const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Burglary - ' + BGAlarmPriority[Alarm];
+            if(this.config.LogAreaAlarm){
+              this.log.info(message);
+            } else{
+              this.log.debug(message);
+            }
           }
         }
-        if(Area.GazAlarm !== BGAlarmType.Normal){
-          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): GazAlarm: ' + BGAlarmType[Area.GazAlarm];
-          if(this.config.LogAreaAlarm){
-            this.log.info(message);
-          } else{
-            this.log.debug(message);
+
+        const GazAlarm = Area.GetGazAlarm();
+        if(GazAlarm.length > 0){
+          for (const Alarm of GazAlarm){
+            const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Gas - ' + BGAlarmPriority[Alarm];
+            if(this.config.LogAreaAlarm){
+              this.log.info(message);
+            } else{
+              this.log.debug(message);
+            }
           }
         }
-        if(Area.PersonnalAlarm !== BGAlarmType.Normal){
-          const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): PersonnalAlarm: ' + BGAlarmType[Area.PersonnalAlarm];
-          if(this.config.LogAreaAlarm){
-            this.log.info(message);
-          } else{
-            this.log.debug(message);
+
+        const PersonnalAlarm = Area.GetPersonnalAlarm();
+        if(PersonnalAlarm.length > 0 ){
+          for (const Alarm of BurglaryAlarm){
+            const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Personnal - ' + BGAlarmPriority[Alarm];
+            if(this.config.LogAreaAlarm){
+              this.log.info(message);
+            } else{
+              this.log.debug(message);
+            }
           }
         }
       }
