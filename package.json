@@ -27,7 +27,9 @@
     "HomeKit",
     "Bosch",
     "Security system",
-    "Home automation"
+    "Home automation",
+    "Solution 2000",
+    "Solution 3000"
   ],
   "dependencies": {
     "tiny-typed-emitter": "^2.1.0"
