@@ -1,5 +1,5 @@
 
-# Homebridge Plugin for Bosch B and G Control Panels
+# Homebridge Plugin for Bosch Control Panels
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 [![npm downloads](https://badgen.net/npm/dt/homebridge-boschcontrolpanel_bgseries)](https://www.npmjs.com/package/homebridge-boschcontrolpanel_bgseries)
 
@@ -18,7 +18,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 * [Bosch B Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf)
 * [Bosch G Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf)
-* [Bosch Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) Experimental support with Legacy Mode
+* [Bosch Solution 2000/3000 Panels](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) Experimental support with Legacy Mode
 
 ## Bosch Control Panel Configuration
 
@@ -70,9 +70,9 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 ## Operation
 ### Legacy Mode:
 In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
-* Expect plugin longer start time 
-* Plugin will pool the panel rather then use push notifications (subscritions).
-* Legacy mode is used for solution 2000/3000 panel
+* Expect longer plugin start time 
+* Plugin will pool the panel rather then use push notifications (subscritions). 
+* Legacy mode is used for solution 2000/3000 panels
 * Legacy mode can be force in configuration page 
 
 ### Security System Accessory:

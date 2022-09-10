@@ -50,7 +50,7 @@ export enum BGAlarmPriority{
   TechnicalFireFault = 15,
   TechnicalGasAlarm = 16,
   TechnicalGasTamper = 17,
-  TechnicalGasFault =19
+  TechnicalGasFault =18
 }
 
 export class BGArea{
@@ -200,12 +200,10 @@ export class BGArea{
 
       if(AlarmAnnunciationPriority & 0x0020){
         this.Alarms.push(BGAlarmPriority.FireSupervisory);
-        return;
       }
 
       if(AlarmAnnunciationPriority & 0x0010){
         this.Alarms.push(BGAlarmPriority.FireTrouble);
-        return;
       }
 
       if(AlarmAnnunciationPriority & 0x0100){
