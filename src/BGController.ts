@@ -706,8 +706,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             const OutputNumber = (Data[++i] << 8) + Data[++i];
             const OutputPatern = Data[++i];
             const Output = this.Outputs[OutputNumber];
-            Output.OutputState = OutputPatern !== 0;
-            this.emit('OutputStateChange', Output);
+            if(Output !== undefined){
+              Output.OutputState = OutputPatern !== 0;
+              this.emit('OutputStateChange', Output);
+            }
           }
 
           // Panel System status
@@ -730,8 +732,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             const PointCode = Data[++i];
             const Condition = (Data[++i] << 16) + (Data[++i] << 8) + Data[++i];
             const Point = this.Points[PointNumber];
-            Point.UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
-            this.emit('PointStatusChange', Point);
+            if(Point !== undefined){
+              Point.UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
+              this.emit('PointStatusChange', Point);
+            }
           }
         }
       }
@@ -1110,7 +1114,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
             // read a zero: done reading text
             const Area = this.Areas[AreaNumber];
-            Area.AreaText = AreaText;
+            if(Area !== undefined){
+              Area.AreaText = AreaText;
+            }
 
             if(i === DataLength){
               this.SendMode2ReqAreaText_CF03(AreaNumber);
@@ -1255,12 +1261,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         return;
       }
 
-      console.log('Enter ReadMode2ReqPointText_CF03');
-
       let i = 1;
       while(i < DataLength){
         const PointNumber = (Data[++i] << 8) + Data[++i];
-        console.log('Reading Point:' + PointNumber);
         let PointText = '';
 
         while(i < DataLength){
@@ -1270,14 +1273,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           } else{
 
             // read a zero: done reading text
-            console.log('PointText:' + PointText);
-
             const Point = this.Points[PointNumber];
             if(Point !== undefined){
               Point.PointText = PointText;
-            } else{
-              console.log('Found undefined point');
-              console.log(this.Points);
             }
 
             if(i === DataLength){
@@ -1439,7 +1437,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
             // read a zero: done reading text
             const Output = this.Outputs[OutputNumber];
-            Output.OutputText = OutputText;
+            if(Output !== undefined){
+              Output.OutputText = OutputText;
+            }
 
             if(i === DataLength){
               this.SendMode2ReqOutputText_CF03(OutputNumber);
