@@ -38,7 +38,7 @@
         "title":"Reject Unauthorized TLS Certificate",
         "type": "boolean",
         "required": true,
-        "default": true
+        "default": false
       },
 
       "MasterFireAlarm":{

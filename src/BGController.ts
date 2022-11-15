@@ -194,10 +194,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       const options = {
         rejectUnauthorized: this.RejectUnauthorizedTLS,
-        ca: [
-          fs.readFileSync('Bosch2020-2030.crt'),
-          fs.readFileSync('Bosch2012-2020.crt'),
-        ],
+        //ca: [
+        //  fs.readFileSync('Bosch2020-2030.crt'),
+        //  fs.readFileSync('Bosch2012-2020.crt'),
+        //],
         checkServerIdentity: function () {
           return undefined;
         },
