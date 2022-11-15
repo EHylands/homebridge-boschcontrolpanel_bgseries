@@ -32,7 +32,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelPort = 14999;
   private PanelPasscode = '';
   private ForceLegacyMode = false;
-  private RejectUnauthorizedTLS = true;
+  private RejectUnauthorizedTLS = false;
   public readonly Panel: BGController;
 
   private PointsArray:Record<number, HKSensor> = {};
@@ -534,6 +534,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.info('Panel Max Doors: ' + this.Panel.MaxDoors);
     this.log.info('Panel Legacy Mode: ' + this.Panel.LegacyMode);
+    this.log.info('Panel Reject Unauthorized TLS: ' + this.Panel.RejectUnauthorizedTLS);
 
     for (const AreaNumber in this.Panel.GetAreas()){
       const Area = this.Panel.GetAreas()[AreaNumber];

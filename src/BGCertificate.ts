@@ -1,0 +1,36 @@
+export const BoschCertificate20202030 = '-----BEGIN CERTIFICATE-----\n' +
+      'MIIGMDCCBBigAwIBAgIBADANBgkqhkiG9w0BAQsFADCBpzELMAkGA1UEBhMCVVMx\n' +
+      'CzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhGYWlycG9ydDEfMB0GA1UECgwWQm9zY2gg\n' +
+      'U2VjdXJpdHkgU3lzdGVtczEVMBMGA1UECwwMQlUgSW50cnVzaW9uMR4wHAYDVQQD\n' +
+      'DBVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxIDAeBgkqhkiG9w0BCQEWEWluZm9AdXMu\n' +
+      'Ym9zY2guY29tMCAXDTIwMDkzMDA3MzE1M1oYDzIwNjAwOTIwMDczMTUzWjCBpzEL\n'+
+      'MAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhGYWlycG9ydDEfMB0G\n'+
+      'A1UECgwWQm9zY2ggU2VjdXJpdHkgU3lzdGVtczEVMBMGA1UECwwMQlUgSW50cnVz\n'+
+      'aW9uMR4wHAYDVQQDDBVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxIDAeBgkqhkiG9w0B\n'+
+      'CQEWEWluZm9AdXMuYm9zY2guY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIIC\n'+
+      'CgKCAgEAuFQ5CyDyZdFeKlCMP/RJRIPmykFrbtj+/fOeU3Ut3VwOyj8SAYAqhkju\n'+
+      'WAN+gT/0dbWbFnBxqrwQGKIMlwrtks5hHQUbgwD2fB6lBamTrephfML3iOZsiDDV\n'+
+      'gnMXHjh/4DomD7GsPjoySk4VSsXhLnDDXFE5QdbGca3xAc9lcDYxt4cewnsrtgd7\n'+
+      'dKUyOYRXqVhcPI0+zoEY3JjJ2PO53i0WFZ7HuDv/J0/vipUh+YMbx6BlvBU15NWt\n'+
+      'mpsz7usGZUarU9OlJ7l/74nWbQhKMegPVn0gqlAwv3g/qGcOMsALb3+Dt03DhUr6\n'+
+      'ufBGcOO0l8gzELPEF+3Aj18MdyTIyCfEbiFv1SBwJg7pxnrgKTK8Cm2uWs39Wews\n'+
+      'Dl82H30WGOxWb4S5WVPLIo0tj25mp8akf8WHsVyAtJ8JNyYhtJWVtxc5B+Y60AG+\n'+
+      'it7IL19m+TUgJ7footvjRKQq0WAp5F0RDxzbyUfyY8bdtIIiUD+fz0es3m3Cciyc\n'+
+      'ofHGVB/K+uSU8RVfXWHoOtX7zr9pSp0eFFWYQHpnpk8dGl57s0wk7G6+n/C0q9Jb\n'+
+      'JoWxJW6CrTsxdAol3+sVo2tGNDlbWKvIwrU9DZ28IwIhP3glDqKHN+crNe8ID9oj\n'+
+      'qAwlMC3KcDQBVWSmXagd7E+516bctfyeE6Q/K5VSab7nk4SNwPkCAwEAAaNjMGEw\n'+
+      'HQYDVR0OBBYEFPccbyUKIn5TYkEB30YapJjTTyy2MB8GA1UdIwQYMBaAFPccbyUK\n'+
+      'In5TYkEB30YapJjTTyy2MA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGG\n'+
+      'MA0GCSqGSIb3DQEBCwUAA4ICAQBc0ijZofmhJsqwR0lui1SfMOPeihd2RkpdRot+\n'+
+      'n09/b1V1HXUSvrOx2CGehkzVPKLBqlTcQ/z/dy8IpJv50lal1iKUQkjbVCI6dJR2\n'+
+      'jhA6QTKrXEnd7UnZroGh4I3FX5k5+/krOu+EclPdl25LwXpECl5PqacwmBUmrX1j\n'+
+      'CBI66EHlKvnlXDFb2zii6w/Cy3ebMAgx8FLX0Qn7A4MubMuBGvOjUrE/2bNEOiRA\n'+
+      'OVZfxRw1xHGvSYrFntgXFy1OcQhlV/MA1KnQvYnU88sMjqRhnsO/7lPzsyVaotYh\n'+
+      'PACgEH3doyr0BItl85FfO2AmtWRMLInThNc6JvGQ/nNOs5yj22v7BOYNst0g82qX\n'+
+      'NN8y2FxwwJHn3UQ0pNhoZyhBUQv3bRLPberGXDa/tgU/8BWSZaCOfQ3A4e/OMuh5\n'+
+      'X0pJC/73AdqrnjQzKcT+JDpy6BP9TZT4PuJEY5Pp1VoZZI98Im6dD4y4g0Hlat6x\n'+
+      'ny70XJr9BNbHr4Xj+S8Y2QMYbkAVhnBCdLd87eVjDl9XvB5fkI75A8QCPymrarki\n'+
+      'xhcJMAGem67ZOsOL6o7U2aAYnJR28FDV1WOwxELYvwp7zYE/EM9HnlNz+3c0poI4\n'+
+      'OoH/tY2XNiurHNvdP153gWRXksq1uZ8uXWKFkU6mhdPmcqzD9f2foPOLv5LIkheK\n'+
+      'qSq8YQ==\n'+
+      '-----END CERTIFICATE-----';

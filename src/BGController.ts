@@ -1,11 +1,11 @@
 import { BGPoint } from './BGPoint';
+import { BoschCertificate20202030 } from './BGCertificate';
 import { BGOutput } from './BGOutput';
 import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
-//import fs = require('fs');
 
 enum BGNegativeAcknowledgement {
   NonSpecificError = 0x00,
@@ -166,7 +166,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private InitialRun = true;
     private PoolInterval = 500;
     private ForleLegacyMode = false;
-    private RejectUnauthorizedTLS = true;
+    RejectUnauthorizedTLS = true;
     LegacyMode = false;
     private EventDataLength = 0;
 
@@ -194,10 +194,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       const options = {
         rejectUnauthorized: this.RejectUnauthorizedTLS,
-        //ca: [
-        //  fs.readFileSync('Bosch2020-2030.crt'),
-        //  fs.readFileSync('Bosch2012-2020.crt'),
-        //],
+        ca: [BoschCertificate20202030],
         checkServerIdentity: function () {
           return undefined;
         },
