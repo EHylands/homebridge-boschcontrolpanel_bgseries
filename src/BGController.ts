@@ -5,7 +5,7 @@ import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
-import fs = require('fs');
+//import fs = require('fs');
 
 enum BGNegativeAcknowledgement {
   NonSpecificError = 0x00,
