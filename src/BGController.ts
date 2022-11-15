@@ -5,6 +5,7 @@ import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
+import fs = require('fs');
 
 enum BGNegativeAcknowledgement {
   NonSpecificError = 0x00,
@@ -121,7 +122,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     private Host: string;
     private Port: number;
-    private SecureSocket:tls.TLSSocket;
     private Socket: net.Socket;
     private SocktetTimeout = 180000;
 
@@ -166,18 +166,19 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private InitialRun = true;
     private PoolInterval = 500;
     private ForleLegacyMode = false;
+    private RejectUnauthorizedTLS = true;
     LegacyMode = false;
     private EventDataLength = 0;
 
-    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
+    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean, RejectUnauthorizedTLS:boolean) {
       super();
       this.Host = Host;
       this.Port = Port;
       this.Passcode = Passcode;
       this.ForleLegacyMode = ForceLegacyMode;
+      this.RejectUnauthorizedTLS = RejectUnauthorizedTLS;
       this.UserType = UserType;
       this.Socket = new net.Socket();
-      this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
     }
 
     Connect(){
@@ -191,9 +192,22 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.LegacyMode = false;
       this.EventDataLength = 0;
 
-      this.Socket = new net.Socket();
+      const options = {
+        rejectUnauthorized: this.RejectUnauthorizedTLS,
+        ca: [
+          fs.readFileSync('./tls/Bosch2020-2030.crt'),
+          fs.readFileSync('./tls/Bosch2012-2020.crt'),
+        ],
+        checkServerIdentity: function () {
+          return undefined;
+        },
+      };
+
+      this.Socket = tls.connect(this.Port, this.Host, options, ()=>{
+        this.SendMode2WhatAreYou();
+      });
+
       this.Socket.setTimeout(this.SocktetTimeout);
-      this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
 
       this.Socket.on('timeout', ()=>{
         this.PanelReadyForOperation = false;
@@ -211,7 +225,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.emit('ControllerError', BGControllerError.ConnectionError, error.message);
       });
 
-      this.SecureSocket.on('data', (data: Buffer) => {
+      this.Socket.on('data', (data: Buffer) => {
         const Protocol = data[0];
         const Data = data.slice(1, data.length);
 
@@ -231,11 +245,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
               'Received unknown protocol number from panel');
           }
         }
-      });
-
-      // Initial connection to Panel
-      this.Socket.connect(this.Port, this.Host, () => {
-        this.SendMode2WhatAreYou();
       });
     }
 
@@ -292,7 +301,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       this.WaitingProtocolResponse_0x01 = true;
-      this.SecureSocket.write(this.ProtocolCommandQueue_0x01[0]);
+      this.Socket.write(this.ProtocolCommandQueue_0x01[0]);
     }
 
     private ReadProtocolMessage_0x01(Data: Buffer){

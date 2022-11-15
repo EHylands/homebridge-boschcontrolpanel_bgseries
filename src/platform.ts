@@ -32,6 +32,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelPort = 14999;
   private PanelPasscode = '';
   private ForceLegacyMode = false;
+  private RejectUnauthorizedTLS = true;
   public readonly Panel: BGController;
 
   private PointsArray:Record<number, HKSensor> = {};
@@ -49,11 +50,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
-      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, false);
+      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser,
+        this.PanelPasscode, false, this.RejectUnauthorizedTLS);
       return;
     }
 
-    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, this.ForceLegacyMode);
+    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode,
+      this.ForceLegacyMode, this.RejectUnauthorizedTLS);
 
     this.api.on('didFinishLaunching', () => {
       this.discoverDevices();
@@ -71,6 +74,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     const Port = this.config.Port;
     const Passcode = this.config.Passcode;
     const ForceLegacyMode = this.config.ForceLegacyMode;
+    const RejectUnauthorizedTLS = this.config.RejectUnauthorizedTLS;
 
 
     if(Host !== undefined && Host !== ''){
@@ -82,6 +86,10 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
           if(ForceLegacyMode !== undefined){
             this.ForceLegacyMode = ForceLegacyMode;
+          }
+
+          if(RejectUnauthorizedTLS !== undefined){
+            this.RejectUnauthorizedTLS = RejectUnauthorizedTLS;
           }
 
           return true;
