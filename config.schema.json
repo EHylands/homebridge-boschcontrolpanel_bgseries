@@ -34,13 +34,6 @@
         "required": true,
         "default": false
       },
-      "RejectUnauthorizedTLS":{
-        "title":"Reject Unauthorized TLS Certificate",
-        "type": "boolean",
-        "required": true,
-        "default": true
-      },
-
       "MasterFireAlarm":{
         "title":"Master Fire Alarm",
         "type": "boolean",
@@ -209,8 +202,7 @@
             "Passcode"
           ]
         },
-        "ForceLegacyMode",
-        "RejectUnauthorizedTLS"
+        "ForceLegacyMode"
       ]
     },
     {

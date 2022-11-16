@@ -32,7 +32,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelPort = 14999;
   private PanelPasscode = '';
   private ForceLegacyMode = false;
-  private RejectUnauthorizedTLS = false;
   public readonly Panel: BGController;
 
   private PointsArray:Record<number, HKSensor> = {};
@@ -51,12 +50,12 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
       this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser,
-        this.PanelPasscode, false, this.RejectUnauthorizedTLS);
+        this.PanelPasscode, false);
       return;
     }
 
     this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode,
-      this.ForceLegacyMode, this.RejectUnauthorizedTLS);
+      this.ForceLegacyMode);
 
     this.api.on('didFinishLaunching', () => {
       this.discoverDevices();
@@ -74,7 +73,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     const Port = this.config.Port;
     const Passcode = this.config.Passcode;
     const ForceLegacyMode = this.config.ForceLegacyMode;
-    const RejectUnauthorizedTLS = this.config.RejectUnauthorizedTLS;
 
 
     if(Host !== undefined && Host !== ''){
@@ -86,10 +84,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
           if(ForceLegacyMode !== undefined){
             this.ForceLegacyMode = ForceLegacyMode;
-          }
-
-          if(RejectUnauthorizedTLS !== undefined){
-            this.RejectUnauthorizedTLS = RejectUnauthorizedTLS;
           }
 
           return true;
@@ -534,7 +528,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.info('Panel Max Doors: ' + this.Panel.MaxDoors);
     this.log.info('Panel Legacy Mode: ' + this.Panel.LegacyMode);
-    this.log.info('Panel Reject Unauthorized TLS: ' + this.Panel.RejectUnauthorizedTLS);
 
     for (const AreaNumber in this.Panel.GetAreas()){
       const Area = this.Panel.GetAreas()[AreaNumber];

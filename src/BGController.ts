@@ -1,5 +1,5 @@
 import { BGPoint } from './BGPoint';
-import { BoschCertificate20202030 } from './BGCertificate';
+//import { BoschCertificate20202030 } from './BGCertificate';
 import { BGOutput } from './BGOutput';
 import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
@@ -166,17 +166,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private InitialRun = true;
     private PoolInterval = 500;
     private ForleLegacyMode = false;
-    RejectUnauthorizedTLS = true;
     LegacyMode = false;
     private EventDataLength = 0;
 
-    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean, RejectUnauthorizedTLS:boolean) {
+    constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
       this.Host = Host;
       this.Port = Port;
       this.Passcode = Passcode;
       this.ForleLegacyMode = ForceLegacyMode;
-      this.RejectUnauthorizedTLS = RejectUnauthorizedTLS;
       this.UserType = UserType;
       this.Socket = new net.Socket();
     }
@@ -193,11 +191,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.EventDataLength = 0;
 
       const options = {
-        rejectUnauthorized: this.RejectUnauthorizedTLS,
-        ca: [BoschCertificate20202030],
-        checkServerIdentity: function () {
-          return undefined;
-        },
+        rejectUnauthorized: false,
+        //ca: [BoschCertificate20202030],
+        //checkServerIdentity: function () {
+        //  return undefined;
+        //},
       };
 
       this.Socket = tls.connect(this.Port, this.Host, options, ()=>{
