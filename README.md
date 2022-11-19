@@ -32,7 +32,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR menu, note TCP/UDP PORT NUMBER (defaults to 7700) 
 * Your Bosch Control Panel needs to be update to a recent firmware with RPS Software 
 1. Needed for a secure connection using TLS > 1.0 with Homebridge
-2. Intrusion Integration Protocol Version >= 5.208 needed for push notifications (plugin doesn't support pooling the Control Panel)
+2. Intrusion Integration Protocol Version >= 5.208 needed for push notifications
 
 ## Homebride pluging configuration file
 ### General parameters
