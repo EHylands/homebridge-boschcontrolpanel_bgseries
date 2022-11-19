@@ -1,4 +1,5 @@
 import { BGPoint } from './BGPoint';
+//import { BoschCertificate20202030 } from './BGCertificate';
 import { BGOutput } from './BGOutput';
 import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
@@ -121,7 +122,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     private Host: string;
     private Port: number;
-    private SecureSocket:tls.TLSSocket;
     private Socket: net.Socket;
     private SocktetTimeout = 180000;
 
@@ -177,7 +177,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.ForleLegacyMode = ForceLegacyMode;
       this.UserType = UserType;
       this.Socket = new net.Socket();
-      this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
     }
 
     Connect(){
@@ -191,27 +190,37 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.LegacyMode = false;
       this.EventDataLength = 0;
 
-      this.Socket = new net.Socket();
+      const options = {
+        rejectUnauthorized: false,
+        //ca: [BoschCertificate20202030],
+        //checkServerIdentity: function () {
+        //  return undefined;
+        //},
+      };
+
+      this.Socket = tls.connect(this.Port, this.Host, options, ()=>{
+        this.SendMode2WhatAreYou();
+      });
+
       this.Socket.setTimeout(this.SocktetTimeout);
-      this.SecureSocket = new tls.TLSSocket(this.Socket, {rejectUnauthorized: false});
 
       this.Socket.on('timeout', ()=>{
         this.PanelReadyForOperation = false;
         this.PanelReceivingNotifcation = false;
         this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
-        this.Socket.destroy();
         this.emit('ControllerError', BGControllerError.ConnectionError, 'Timeout');
+        this.Socket.destroy();
       });
 
       this.Socket.on('error', (error: Error) => {
         this.PanelReadyForOperation = false;
         this.PanelReceivingNotifcation = false;
         this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
-        this.Socket.destroy();
         this.emit('ControllerError', BGControllerError.ConnectionError, error.message);
+        this.Socket.destroy();
       });
 
-      this.SecureSocket.on('data', (data: Buffer) => {
+      this.Socket.on('data', (data: Buffer) => {
         const Protocol = data[0];
         const Data = data.slice(1, data.length);
 
@@ -231,11 +240,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
               'Received unknown protocol number from panel');
           }
         }
-      });
-
-      // Initial connection to Panel
-      this.Socket.connect(this.Port, this.Host, () => {
-        this.SendMode2WhatAreYou();
       });
     }
 
@@ -292,7 +296,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       this.WaitingProtocolResponse_0x01 = true;
-      this.SecureSocket.write(this.ProtocolCommandQueue_0x01[0]);
+      this.Socket.write(this.ProtocolCommandQueue_0x01[0]);
     }
 
     private ReadProtocolMessage_0x01(Data: Buffer){
@@ -764,7 +768,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x06]);
       const CommandFormat = new Uint8Array([]);
 
-      if(this.Passcode.length < 6 || this.Passcode.length > 24){
+      if(this.Passcode.length < this.MinPasscodeLength || this.Passcode.length > this.MaxPassCodeLength){
         this.emit('ControllerError', BGControllerError.PasscodeLengthError, 'Invalid Passcode Length');
         return;
       }
@@ -839,7 +843,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const PasscodeMSB1 = Number(this.Passcode[0]) << 4;
       const PasscodeMSB2 = Number(this.Passcode[1]);
       const PasscodeMSB = PasscodeMSB1 + PasscodeMSB2;
-
       const PasscodeBody1 = Number(this.Passcode[2]) << 4;
 
       let PasscodeBody2 = 0xF;
@@ -913,7 +916,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       if(ActiveAreaMaskArray.length > 16){
         this.emit('ControllerError', BGControllerError.MaxAreaNumberError,
-          'This controller ony support ' + this.BoschMaxAreas + ' areas');
+          'This controller only supports ' + this.BoschMaxAreas + ' areas');
         return;
       }
 
@@ -988,9 +991,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     //
     private ReadMode2WhatAreYou(Data: Buffer){
       this.PanelType = Data[2];
-      this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + 255 * Data[6]);
-      this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + 255 * Data[10]);
-      this.PanelExecuteProtocolVersion = new BGProtocolVersion(Data[11], Data[12], Data[13] + 255 * Data[14]);
+      this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + (Data[6] << 8));
+      this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + (Data[10] << 8));
+      this.PanelExecuteProtocolVersion = new BGProtocolVersion(Data[11], Data[12], Data[13] + (Data[14] << 8));
 
       this.PanelBusyFlag = false;
       if(Data[15] === MaxConnectionsInUseFlags.MaxUserBasedRemoteAccessUsersInUse){
@@ -1111,7 +1114,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           if(Read !== 0){
             AreaText += String.fromCharCode(Read);
           } else{
-
             // read a zero: done reading text
             const Area = this.Areas[AreaNumber];
             if(Area !== undefined){
@@ -1155,7 +1157,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in protocol version 1.23
     //
     private ReadMode2ReqPointsInArea(Data: Buffer, AreaNumber:number){
-      const BitMaskArray = new Uint8Array([0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]);
       const ActivePointMaskArray = Data.slice(2, Data.length);
 
       for (let i = 0; i < ActivePointMaskArray.length ; i++) {
@@ -1168,7 +1169,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             break;
           }
 
-          if(ActiveAreaMask & BitMaskArray[j]){
+          if(ActiveAreaMask & Math.pow(2, 7-j)){
             this.Points[PointNumber] = new BGPoint(PointNumber, AreaNumber);
           }
         }
@@ -1642,15 +1643,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         let LocalAreaMask = 0;
 
-        // For every byte:
-        // bit 7 = area n
-        // bit 6 = area n+1
-        // bit 5 = area n+2
-        // bit 4 = area n+3
-        // bit 3 = area n+4
-        // bit 2 = area n+5
-        // bit 1 = area n+6
-        // bit 0 = area n+7
         for(let k = 1 ; k <= 8 ; k ++){
           for(let j = 0 ; j < AreaToArm.length ; j++){
             if(AreaToArm[j] === ((i*8)+k)){
