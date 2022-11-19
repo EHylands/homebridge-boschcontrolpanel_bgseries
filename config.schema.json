@@ -199,10 +199,10 @@
           "items": [
             "Host", 
             "Port",
-            "Passcode",
-            "ForceLegacyMode"
+            "Passcode"
           ]
-        }
+        },
+        "ForceLegacyMode"
       ]
     },
     {

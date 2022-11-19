@@ -49,11 +49,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
-      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, false);
+      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser,
+        this.PanelPasscode, false);
       return;
     }
 
-    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode, this.ForceLegacyMode);
+    this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode,
+      this.ForceLegacyMode);
 
     this.api.on('didFinishLaunching', () => {
       this.discoverDevices();
