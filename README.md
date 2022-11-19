@@ -11,14 +11,13 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 * Use Control Panel Points state for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
 * Get Panel Wide notifiations for Fire, Burglary, Gaz and Personnal events. 
 
-![Screenshot](BCP0401.jpg)
-![Screenshot](BCP0402.jpg)
+![Screenshot](BG6.jpg)
 
 ## Supported Bosch Control Panels
 
 * [Bosch B Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf)
 * [Bosch G Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf)
-* [Bosch Solution 2000/3000 Panels](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) Experimental support with Legacy Mode
+* [Bosch Solution 2000/3000 Panels](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) (Support with Legacy Mode)
 
 ## Bosch Control Panel Configuration
 
@@ -84,7 +83,4 @@ The following conversions are applied between Homekit Area Arming state and Bosc
 | Away | All On Delay
 | Night | Part On Instant
 | Home | Part On Delay
-
-# Disclaimer
-This is Beta software. Not to be relied upon for life or mission critical applications.
 
