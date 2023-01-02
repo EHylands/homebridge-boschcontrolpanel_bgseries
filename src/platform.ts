@@ -199,7 +199,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
-        const OutputText = PanelOutput.OutputText;
+        let OutputText = PanelOutput.OutputText;
+
+        // Temporary fix for Solution 3000 - Firmware 2.1
+        if(OutputText === '' || OutputText === undefined){
+          OutputText = 'Output' + Output.AreaNumber;
+        }
+
         const accessory = new this.api.platformAccessory(OutputText, uuid);
         this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
         this.CreatedAccessories.push(accessory);
@@ -233,7 +239,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
-        const AreaText = PanelArea.AreaText;
+        let AreaText = PanelArea.AreaText;
+
+        // Temporary fix for Solution 3000 - Firmware 2.1
+        if(AreaText === '' || AreaText === undefined){
+          AreaText = 'Area' + Area.AreaNumber;
+        }
+
         const accessory = new this.api.platformAccessory(AreaText, uuid);
         this.ControlPanelArray.push(new HKSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
         this.CreatedAccessories.push(accessory);
@@ -251,7 +263,12 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
 
       const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
-      const PointText = PointInPanel.PointText;
+      let PointText = PointInPanel.PointText;
+
+      // Temporary fix for Solution 3000 - Firmware 2.1
+      if(PointText === '' || PointText === undefined){
+        PointText = 'Point' + Point.AreaNumber;
+      }
 
       const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
