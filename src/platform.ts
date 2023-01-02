@@ -199,13 +199,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
-        let OutputText = PanelOutput.OutputText;
-
-        // Temporary fix for Solution 3000 - Firmware 2.1
-        if(OutputText === '' || OutputText === undefined){
-          OutputText = 'Output' + Output.AreaNumber;
-        }
-
+        const OutputText = PanelOutput.OutputText;
         const accessory = new this.api.platformAccessory(OutputText, uuid);
         this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
         this.CreatedAccessories.push(accessory);
@@ -239,13 +233,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.CreatedAccessories.push(existingAccessory);
       } else{
         const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
-        let AreaText = PanelArea.AreaText;
-
-        // Temporary fix for Solution 3000 - Firmware 2.1
-        if(AreaText === '' || AreaText === undefined){
-          AreaText = 'Area' + Area.AreaNumber;
-        }
-
+        const AreaText = PanelArea.AreaText;
         const accessory = new this.api.platformAccessory(AreaText, uuid);
         this.ControlPanelArray.push(new HKSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
         this.CreatedAccessories.push(accessory);
@@ -263,13 +251,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
 
       const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
-      let PointText = PointInPanel.PointText;
-
-      // Temporary fix for Solution 3000 - Firmware 2.1
-      if(PointText === '' || PointText === undefined){
-        PointText = 'Point' + Point.AreaNumber;
-      }
-
+      const PointText = PointInPanel.PointText;
       const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
