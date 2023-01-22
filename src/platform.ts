@@ -252,7 +252,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
       const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
       const PointText = PointInPanel.PointText;
-
       const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);

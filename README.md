@@ -14,10 +14,14 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 ![Screenshot](BG6.jpg)
 
 ## Supported Bosch Control Panels
+| Bosch Panel  | Status | Notes |
+| ------ | ------ |  ------ |
+| [B Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf) |Supported|  |
+| [G Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Supported |  |
+| [GV4](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Status Pending | Firmware 2.00 and higher |
+| [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Will use Legacy Mode |
+| [AMAX Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/AMAX_panel_family_Installation_Manual_frFR_15867163019.pdf) | Status Pending| Firmware 4.01 and higher |
 
-* [Bosch B Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf)
-* [Bosch G Series Control Panels](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf)
-* [Bosch Solution 2000/3000 Panels](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) (Support with Legacy Mode)
 
 ## Bosch Control Panel Configuration
 
@@ -70,8 +74,8 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 ### Legacy Mode:
 In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
 * Expect longer plugin start time 
-* Plugin will pool the panel rather then use push notifications (subscritions). 
-* Legacy mode is used for solution 2000/3000 panels
+* Plugin will pool the panel rather then use push notifications (subscriptions). 
+* Legacy mode is used for Solution 2000/3000 panels
 * Legacy mode can be force in configuration page 
 
 ### Security System Accessory:
