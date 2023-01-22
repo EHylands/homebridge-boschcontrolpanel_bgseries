@@ -14,7 +14,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 ![Screenshot](BG6.jpg)
 
 ## Supported Bosch Control Panels
-| Panel  | Status | Notes |
+| Bosch Panel  | Status | Notes |
 | ------ | ------ |  ------ |
 | [B Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf) |Supported|  |
 | [G Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Supported |  |
