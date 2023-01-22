@@ -6,9 +6,9 @@
 
 This Homebridge plugin allows interactions with your Bosch Control Panel
 
-* Set Control Panel Area arming mode (Arm, Disarm, Part on instant, Part on delay)
-* Set Control Panel Outputs state (On, Off)
-* Use Control Panel Points state for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
+* Set Panel Area arming mode (Arm, Disarm, Part on instant, Part on delay)
+* Set Panel Outputs state (On, Off)
+* Use Panel Points state for home automation purposes (Motion, Contact, Smoke, Leak and Carbon Monoxide)
 * Get Panel Wide notifiations for Fire, Burglary, Gaz and Personnal events. 
 
 ![Screenshot](BG6.jpg)
