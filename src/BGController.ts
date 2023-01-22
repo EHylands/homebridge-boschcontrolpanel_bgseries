@@ -264,6 +264,32 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       return;
     }
 
+    private ControllerHasReadAllText():boolean{
+
+      for( const AreaNumber in this.Areas){
+        const Area = this.Areas[AreaNumber];
+        if(Area.AreaText === ''){
+          return false;
+        }
+      }
+
+      for(const PointNumber in this.Points){
+        const Point = this.Points[PointNumber];
+        if(Point.PointText === ''){
+          return false;
+        }
+      }
+
+      for(const OutputNumber in this.Outputs){
+        const Output = this.Outputs[OutputNumber];
+        if(Output.OutputText === ''){
+          return false;
+        }
+      }
+
+      return true;
+    }
+
     StartOperation(){
       if(this.LegacyMode){
         this.PoolPanel();
@@ -1063,6 +1089,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.Areas[AreaNumber].AreaText = AreaText;
       }
 
+      if(this.ControllerHasReadAllText()){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
+      }
+
       return;
     }
 
@@ -1219,6 +1252,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         this.Points[PointNumber].PointText = PointText;
       }
 
+      if(this.ControllerHasReadAllText()){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
+      }
+
       return;
     }
 
@@ -1345,16 +1385,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           'SendMode2ReqOutputText_CF01, Expecting IIP version >= ' + MinVersion.toSring());
       }
 
-      // If no output are configured on the panel, return and start panel operation.
-      const length = Object.keys(this.Outputs).length;
-      if(length === 0){
-        if(!this.PanelReadyForOperation){
-          this.PanelReadyForOperation = true;
-          this.emit('PanelReadyForOperation', true);
-        }
-        return;
-      }
-
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x33]);
       const CommandFormat = new Uint8Array([]);
@@ -1362,6 +1392,13 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       for (const Output in this.Outputs){
         const Data = new Uint8Array([ Number(Output) & 0xFF, 0]);
         this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data));
+      }
+
+      if(this.ControllerHasReadAllText()){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
       }
     }
 
@@ -1387,6 +1424,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           this.emit('PanelReadyForOperation', true);
         }
       }
+
+      if(this.ControllerHasReadAllText()){
+        if(!this.PanelReadyForOperation){
+          this.PanelReadyForOperation = true;
+          this.emit('PanelReadyForOperation', true);
+        }
+      }
+
       return;
     }
 
