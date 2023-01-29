@@ -12,6 +12,7 @@ import { HKCOSensor } from './HKCOSensor';
 import { HKSensor } from './HKSensor';
 import { HKOutputAccessory } from './HKOutputAccessory';
 import { HKAlarmSensor } from './HKAlarmSensor';
+import { type } from 'os';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',
@@ -202,25 +203,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     for(const Output of this.config.Outputs){
 
-      if(!Output.Active){
-        continue;
+      if(Output.Active){
+        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, Output.OutputNumber);
       }
-
-      this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, Output.OutputNumber);
-
-      /*const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-      if (existingAccessory) {
-        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
-        const OutputText = PanelOutput.OutputText;
-        const accessory = new this.api.platformAccessory(OutputText, uuid);
-        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
-        this.CreatedAccessories.push(accessory);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      }*/
     }
   }
 

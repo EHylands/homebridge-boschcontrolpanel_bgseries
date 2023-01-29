@@ -5,10 +5,15 @@ export class HKOutputAccessory extends HKAccessory {
 
   constructor(
     protected readonly platform:HB_BoschControlPanel_BGSeries,
-    readonly OutputNumber: number,
+    public OutputNumber:number,
   ) {
 
-    super(platform, platform.Panel.GetOutputs()[OutputNumber].OutputText, 'BG Output', 'BGOutput' + OutputNumber);
+    super(
+      platform,
+      'BGOutput' + platform.Panel.PanelType + OutputNumber,
+      platform.Panel.GetOutputs()[OutputNumber].OutputText,
+      'BGOutput' + OutputNumber
+    );
 
     this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + this.Accessory.displayName);
 
@@ -24,7 +29,5 @@ export class HKOutputAccessory extends HKAccessory {
     this.useService(this.platform.Service.Switch).updateCharacteristic(this.platform.Characteristic.On, State);
   }
 
-  protected CreateUUID(): string{
-    return 'BGOutput' + this.platform.Panel.PanelType + this.OutputNumber;
-  }
+
 }

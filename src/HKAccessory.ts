@@ -1,4 +1,6 @@
+import { SrvRecord } from 'dns';
 import { PlatformAccessory, Service, WithUUID } from 'homebridge';
+import { BGPanelType } from './BGConst';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
@@ -7,12 +9,11 @@ export abstract class HKAccessory {
 
     constructor(
         protected readonly platform: HB_BoschControlPanel_BGSeries,
+        protected readonly UUIDString: string,
         protected readonly Name:string,
-        protected readonly Model:string,
         protected readonly Serial:string,
     ) {
-
-      const uuid = platform.api.hap.uuid.generate(this.CreateUUID());
+      const uuid = platform.api.hap.uuid.generate(UUIDString);
       let accessory = platform.accessories.find(accessory => accessory.UUID === uuid);
       if(accessory){
         this.platform.api.updatePlatformAccessories([accessory]);
@@ -25,12 +26,10 @@ export abstract class HKAccessory {
 
       this.Accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Bosch Control Panel')
-        .setCharacteristic(this.platform.Characteristic.Model, Model)
+        .setCharacteristic(this.platform.Characteristic.Model, BGPanelType[this.platform.Panel.PanelType])
         .setCharacteristic(this.platform.Characteristic.SerialNumber, Serial)
         .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.platform.Panel.FirmwareVersion.toSring());
     }
-
-    protected abstract CreateUUID(): string;
 
     protected useService(type: WithUUID<typeof Service>): Service {
       const service = this.Accessory.getService(type);
