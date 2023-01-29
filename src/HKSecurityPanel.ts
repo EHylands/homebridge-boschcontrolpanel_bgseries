@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory} from 'homebridge';
-import { BGController, BGPanelType } from './BGController';
-import { BGAreaStatus, BGArmingType } from './BGArea';
+import { BGAreaStatus, BGArmingType, BGPanelType } from './BGConst';
+import { BGController } from './BGController';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 
 export class HKSecurityPanel {

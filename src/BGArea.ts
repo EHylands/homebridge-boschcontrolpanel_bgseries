@@ -1,57 +1,5 @@
-export enum BGAreaStatus{
-    Unknown = 0x00,
-    AllOn = 0x01,
-    PartOnInstant = 0x02,
-    PartOnDelay = 0x03,
-    Disarmed = 0x04,
-    AllOnEntryDelay = 0x05,
-    PartOnEntryDelay = 0x06,
-    AllOnExitDelay = 0x07,
-    PartOnExitDelay = 0x08,
-    AllOnInstantArmed = 0x09,
-    StayArm1On = 0x0A,
-    StayArm2On = 0x0B,
-    AwayOn = 0x0C,
-    AwayExitDelay = 0x0D,
-    AwayEntryDelay = 0x0E
-}
 
-export enum BGArmingType{
-    Disarm = 0x01,
-    MasterInstantArm = 0x02,
-    MasterDelayArm = 0x03,
-    PerimeterInstantArm = 0x04,
-    PerimeterDelayArm = 0x05,
-    ForceMasterDelay = 0x06,
-    ForceMasterInstantArm = 0x07,
-    ForcePerimeterDelayArm = 0x08,
-    ForcePerimeterInstantArm = 0x09,
-    StayArm1 = 0x0A,
-    StayArm2 = 0x0B,
-    AwayArm = 0x0C
-  }
-
-export enum BGAlarmPriority{
-  NoPriority = 0,
-  BurgTrouble = 1,
-  BurgSupervisory = 2,
-  GasTrouble = 3,
-  GasSupervisory = 4,
-  FireTrouble = 5,
-  FireSupervisory = 6,
-  BurgAlarm = 7,
-  PersonalEmergency = 8,
-  GasAlarm = 9,
-  FireAlarm = 10,
-  BurglaryTamper = 11,
-  BurglaryFault = 12,
-  TechnicalFireAlarm = 13,
-  TechnicalFireTamper = 14,
-  TechnicalFireFault = 15,
-  TechnicalGasAlarm = 16,
-  TechnicalGasTamper = 17,
-  TechnicalGasFault =18
-}
+import { BGAreaStatus, BGAlarmPriority } from './BGConst';
 
 export class BGArea{
     AreaNumber: number;
