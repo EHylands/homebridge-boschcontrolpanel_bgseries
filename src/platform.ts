@@ -208,6 +208,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
   private DiscoverAreas(){
 
+    // Return if no Areas are configured in config file
     if(this.config.Areas === undefined){
       return;
     }
@@ -231,12 +232,12 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
   private DiscoverPoints(){
 
+    // Return if no Points are configured in config file
     if(this.config.Points === undefined){
       return;
     }
 
     for(const Point of this.config.Points){
-
       if(Point.Active){
 
         switch(Point.SensorType){

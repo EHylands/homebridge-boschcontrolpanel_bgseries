@@ -13,7 +13,7 @@ export class HKSecurityPanel extends HKAccessory {
 
     super(
       platform,
-      'BGArea' + platform.Panel.PanelType + AreaMonitored,
+      'BGArea' + platform.Panel.PanelType + AreaMonitored, // UUID, do not change
       platform.Panel.GetAreas()[AreaMonitored].AreaText,
       'BGPanel' + AreaMonitored,
     );

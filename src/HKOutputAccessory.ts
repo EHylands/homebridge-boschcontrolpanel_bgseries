@@ -10,7 +10,7 @@ export class HKOutputAccessory extends HKAccessory {
 
     super(
       platform,
-      'BGOutput' + platform.Panel.PanelType + OutputNumber,
+      'BGOutput' + platform.Panel.PanelType + OutputNumber, // UUID, do not change
       platform.Panel.GetOutputs()[OutputNumber].OutputText,
       'BGOutput' + OutputNumber,
     );
