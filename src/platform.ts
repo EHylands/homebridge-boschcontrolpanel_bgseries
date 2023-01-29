@@ -12,7 +12,6 @@ import { HKCOSensor } from './HKCOSensor';
 import { HKSensor } from './HKSensor';
 import { HKOutputAccessory } from './HKOutputAccessory';
 import { HKAlarmSensor } from './HKAlarmSensor';
-import { type } from 'os';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',

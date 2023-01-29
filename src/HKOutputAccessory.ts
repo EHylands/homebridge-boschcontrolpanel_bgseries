@@ -12,7 +12,7 @@ export class HKOutputAccessory extends HKAccessory {
       platform,
       'BGOutput' + platform.Panel.PanelType + OutputNumber,
       platform.Panel.GetOutputs()[OutputNumber].OutputText,
-      'BGOutput' + OutputNumber
+      'BGOutput' + OutputNumber,
     );
 
     this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + this.Accessory.displayName);

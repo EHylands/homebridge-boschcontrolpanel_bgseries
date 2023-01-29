@@ -1,4 +1,3 @@
-import { SrvRecord } from 'dns';
 import { PlatformAccessory, Service, WithUUID } from 'homebridge';
 import { BGPanelType } from './BGConst';
 import { HB_BoschControlPanel_BGSeries } from './platform';
