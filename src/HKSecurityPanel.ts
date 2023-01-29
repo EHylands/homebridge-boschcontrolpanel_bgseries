@@ -1,59 +1,49 @@
-import { Service, PlatformAccessory} from 'homebridge';
 import { BGAreaStatus, BGArmingType, BGPanelType } from './BGConst';
-import { BGController } from './BGController';
+import { HKAccessory } from './HKAccessory';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 
-export class HKSecurityPanel {
-  private service: Service;
-  private Panel:BGController;
+export class HKSecurityPanel extends HKAccessory {
 
   constructor(
-    private readonly platform: HB_BoschControlPanel_BGSeries,
-    private readonly accessory: PlatformAccessory,
+    protected readonly platform: HB_BoschControlPanel_BGSeries,
     private readonly AreaMonitored: number,
     private readonly AreaInScope:number[],
     private readonly PasscodeFollowScope:boolean,
   ) {
 
-    this.Panel = this.platform.Panel;
+    super(
+      platform,
+      'BGArea' + platform.Panel.PanelType + AreaMonitored,
+      platform.Panel.GetAreas()[AreaMonitored].AreaText,
+      'BGPanel' + AreaMonitored,
+    );
 
     if(AreaInScope.indexOf(AreaMonitored) === -1){
       this.AreaInScope.push(this.AreaMonitored);
     }
     this.AreaInScope.sort((a, b)=> a-b);
 
-    this.platform.log.info('Security System: Area' + AreaMonitored + ' - ' + accessory.displayName);
+    this.platform.log.info('Security System: Area' + AreaMonitored + ' - ' + this.Accessory.displayName);
     this.platform.log.debug('    Area(s) in Scope: ' + this.GetAreaInScopeString());
     this.platform.log.debug('    Passcode Follows Scope: ' + this.PasscodeFollowScope);
 
-    // Set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Bosch Control Panel')
-      .setCharacteristic(this.platform.Characteristic.Model, BGPanelType[this.Panel.PanelType])
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPanel' + AreaMonitored)
-      .setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-
-    this.service = this.accessory.getService(this.platform.Service.SecuritySystem)
-    || this.accessory.addService(this.platform.Service.SecuritySystem);
-
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
+    this.useService(this.platform.Service.SecuritySystem).getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
       .onSet(this.handleSecuritySystemTargetStateSet.bind(this));
 
-    this.Panel.on('AreaOnOffStateChange', (Area)=>{
+    this.platform.Panel.on('AreaOnOffStateChange', (Area)=>{
       if(this.AreaMonitored === Area.AreaNumber){
         this.UpdateStateFromPanel(Area.AreaStatus);
       }
     });
 
-    this.Panel.on('AreaAlarmStateChange', (Area)=>{
-
+    this.platform.Panel.on('AreaAlarmStateChange', (Area)=>{
       if(this.AreaInScope.indexOf(Area.AreaNumber) === -1){
         return;
       }
 
       let AlarmDetected = false;
       for(let i = 0 ; i < this.AreaInScope.length ; i ++){
-        if(this.Panel.GetAreas()[this.AreaInScope[i]].GetAlarmDetected()){
+        if(this.platform.Panel.GetAreas()[this.AreaInScope[i]].GetAlarmDetected()){
           AlarmDetected = true;
           break;
         }
@@ -66,20 +56,23 @@ export class HKSecurityPanel {
   UpdateStateFromPanel(AreaStatus: BGAreaStatus) {
     const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(AreaStatus);
     const HKTargetStatus = this.BoschAreaStatusToTargetHomekitSecurityStatus(AreaStatus);
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
-    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
+    this.useService(this.platform.Service.SecuritySystem)
+      .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+    this.useService(this.platform.Service.SecuritySystem)
+      .getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
   }
 
   SetAlarmTriggered(AlarmTrigerred){
     if(AlarmTrigerred){
-      this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
+      this.useService(this.platform.Service.SecuritySystem).updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
         this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
     } else{
 
-      const Area = this.Panel.GetAreas()[this.AreaMonitored];
+      const Area = this.platform.Panel.GetAreas()[this.AreaMonitored];
       if(Area){
         const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(Area.AreaStatus);
-        this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+        this.useService(this.platform.Service.SecuritySystem)
+          .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
       } else{
         this.platform.log.error('Security System: Error reading Area Status');
       }
@@ -102,7 +95,7 @@ export class HKSecurityPanel {
 
     switch(value){
       case this.platform.Characteristic.SecuritySystemTargetState.DISARM:{
-        this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.Disarm);
+        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.Disarm);
         break;
       }
 
@@ -113,9 +106,9 @@ export class HKSecurityPanel {
            Panel.PanelType === BGPanelType.AMAX2100 ||
            Panel.PanelType === BGPanelType.AMAX3000 ||
            Panel.PanelType === BGPanelType.AMAX4000){
-          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.AwayArm);
+          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.AwayArm);
         } else{
-          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.MasterDelayArm);
+          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.MasterDelayArm);
         }
 
         break;
@@ -127,18 +120,18 @@ export class HKSecurityPanel {
           Panel.PanelType === BGPanelType.AMAX2100 ||
           Panel.PanelType === BGPanelType.AMAX3000 ||
           Panel.PanelType === BGPanelType.AMAX4000){
-          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
           break;
         }
 
         if(Panel.PanelType === BGPanelType.Solution2000 ||
           Panel.PanelType === BGPanelType.Solution3000){
-          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm2);
+          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm2);
           break;
 
         }
 
-        this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterInstantArm);
+        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterInstantArm);
         break;
       }
 
@@ -149,11 +142,11 @@ export class HKSecurityPanel {
           Panel.PanelType === BGPanelType.AMAX2100 ||
           Panel.PanelType === BGPanelType.AMAX3000 ||
           Panel.PanelType === BGPanelType.AMAX4000){
-          this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
           break;
         }
 
-        this.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterDelayArm);
+        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterDelayArm);
         break;
       }
     }

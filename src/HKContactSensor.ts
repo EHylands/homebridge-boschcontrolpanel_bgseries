@@ -1,6 +1,5 @@
-import { Service, PlatformAccessory } from 'homebridge';
+import { Service} from 'homebridge';
 import { HKSensor } from './HKSensor';
-import { BGController} from './BGController';
 import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
@@ -8,25 +7,14 @@ export class HKContactSensor extends HKSensor {
 
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,
-    protected readonly accessory: PlatformAccessory,
-    protected readonly Panel: BGController,
     readonly PointNumber: number,
   ) {
 
-    super(platform, accessory, Panel, PointNumber, BGSensorType.ContactSensor);
-
-    // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'BG Control Panel')
-      .setCharacteristic(this.platform.Characteristic.Model, 'BG Contact Sensor')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGPoint' + PointNumber);
-
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
+    super(platform, PointNumber, BGSensorType.ContactSensor);
   }
 
   GetService():Service{
-    return this.accessory.getService(this.platform.Service.ContactSensor)
-    || this.accessory.addService(this.platform.Service.ContactSensor);
+    return this.useService(this.platform.Service.ContactSensor);
   }
 
   HandleEventDetected(PointStatus: BGPointStatus){
@@ -34,10 +22,10 @@ export class HKContactSensor extends HKSensor {
     const ContactDetected = PointStatus === BGPointStatus.Normal;
 
     if(ContactDetected){
-      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
+      this.GetService().getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
     } else{
-      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
+      this.GetService().getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
     }
   }

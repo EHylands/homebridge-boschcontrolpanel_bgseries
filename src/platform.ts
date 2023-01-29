@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGPanelType, BGUserType, BGAreaStatus, BGAlarmPriority } from './BGConst';
 import { BGController, BGControllerError } from './BGController';
-import { BGPoint, BGPointStatus} from './BGPoint';
+import { BGPointStatus} from './BGPoint';
 import { HKSecurityPanel } from './HKSecurityPanel';
 import { HKMotionSensor } from './HKMotionSensor';
 import { HKContactSensor } from './HKContactSensor';
@@ -169,8 +169,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
     }
 
-
-
     // Outputs
     if(this.config.Outputs !== undefined){
       for(const Output of this.config.Outputs){
@@ -218,30 +216,15 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const AreaInScope:number[] = [];
       const PasscodeFollowsScope = Area.PasscodeFollowsScope;
 
-      if(!Area.Active){
-        continue;
-      }
-
-      if(Area.AreaInScope !== undefined && Area.AreaInScope !== ''){
-        const ScopeStringArray = Area.AreaInScope.split(',');
-        for(let i = 0 ; i < ScopeStringArray.length ; i ++){
-          AreaInScope.push(Number(ScopeStringArray[i]));
+      if(Area.Active){
+        if(Area.AreaInScope !== undefined && Area.AreaInScope !== ''){
+          const ScopeStringArray = Area.AreaInScope.split(',');
+          for(let i = 0 ; i < ScopeStringArray.length ; i ++){
+            AreaInScope.push(Number(ScopeStringArray[i]));
+          }
         }
-      }
 
-      const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-
-      if (existingAccessory) {
-        this.ControlPanelArray.push(new HKSecurityPanel(this, existingAccessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
-        const AreaText = PanelArea.AreaText;
-        const accessory = new this.api.platformAccessory(AreaText, uuid);
-        this.ControlPanelArray.push(new HKSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
-        this.CreatedAccessories.push(accessory);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.ControlPanelArray.push(new HKSecurityPanel(this, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
       }
     }
   }
@@ -254,27 +237,35 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     for(const Point of this.config.Points){
 
-      if(!Point.Active){
-        continue;
-      }
+      if(Point.Active){
 
-      const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
-      const PointText = PointInPanel.PointText;
-      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
+        switch(Point.SensorType){
 
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-      if (existingAccessory) {
-        existingAccessory.context.SensorType = Point.SensorType;
-        existingAccessory.context.PointNumber = Point.PointNumber;
-        this.CreateSensor(existingAccessory, PointInPanel);
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const accessory = new this.api.platformAccessory(PointText, uuid);
-        accessory.context.SensorType = Point.SensorType;
-        accessory.context.PointNumber = Point.PointNumber;
-        this.CreateSensor(accessory, PointInPanel);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-        this.CreatedAccessories.push(accessory);
+          case BGSensorType.MotionSensor:{
+            this.PointsArray[Point.PointNumber] = new HKMotionSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.ContactSensor:{
+            this.PointsArray[Point.PointNumber] =new HKContactSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.LeakSensor :{
+            this.PointsArray[Point.PointNumber] = new HKLeakSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.SmokeSensor :{
+            this.PointsArray[Point.PointNumber] = new HKSmokeSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.COSensor :{
+            this.PointsArray[Point.PointNumber] = new HKCOSensor(this, Point.PointNumber);
+            break;
+          }
+        }
       }
     }
   }
@@ -486,37 +477,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       new HKAlarmSensor(this, accessory, this.Panel, MonitoringArea, MonitoringEvent);
       this.CreatedAccessories.push(accessory);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-    }
-  }
-
-  private CreateSensor(Accessory: PlatformAccessory, Point:BGPoint){
-
-    switch(Accessory.context.SensorType){
-
-      case BGSensorType.MotionSensor:{
-        this.PointsArray[Point.PointNumber] = new HKMotionSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.ContactSensor:{
-        this.PointsArray[Point.PointNumber] =new HKContactSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.LeakSensor :{
-        this.PointsArray[Point.PointNumber] = new HKLeakSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.SmokeSensor :{
-        this.PointsArray[Point.PointNumber] = new HKSmokeSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.COSensor :{
-        this.PointsArray[Point.PointNumber] = new HKCOSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
     }
   }
 
