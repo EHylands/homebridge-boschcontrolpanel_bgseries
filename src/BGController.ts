@@ -1,58 +1,13 @@
 import { BGPoint } from './BGPoint';
+import { BGAlarmPriority, BGArmingType, BGUserType, BGPanelType, BGNegativeAcknowledgement } from './BGConst';
 //import { BoschCertificate20202030 } from './BGCertificate';
 import { BGOutput } from './BGOutput';
-import { BGArmingType, BGArea, BGAlarmPriority } from './BGArea';
+import { BGArea } from './BGArea';
 import { BGProtocolVersion } from './BGProtocolVersion';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
-
-enum BGNegativeAcknowledgement {
-  NonSpecificError = 0x00,
-  ChecksumFailureUDPConnectionsOnly = 0x01,
-  InvalidSizeLength = 0x02,
-  InvalidCommand = 0x03,
-  InvalidInterfaceState = 0x04,
-  DataOutOfRange = 0x05,
-  Noauthority = 0x06,
-  Unsupportedcommand = 0x07,
-  CannotArmPanel = 0x08,
-  InvalidRemoteID = 0x09,
-  InvalidLicense = 0x0A,
-  InvalidMagicNumber = 0x0B,
-  ExpiredLicense = 0x0C,
-  ExpiredMagicNumber = 0x0D,
-  UnsupportedFormatVersion = 0x0E,
-  FirmwareUpdateInProgress = 0x11,
-  IncompatibleFirmwareVersion = 0x12,
-  AllPointsNotConfigured = 0x12,
-  ExecutionFunctionNoErrors = 0x20,
-  ExecutionFunctionInvalidArea = 0x21,
-  ExecutionFunctionInvalidCommand = 0x22,
-  ExecutionFunctionNotAuthenticated = 0x23,
-  ExecutionFunctionInvalidUser = 0x24,
-  ExecutionFunctionParameterIncorrect = 0x40,
-  ExecutionFunctionSequenceWrong = 0x41,
-  ExecutionFunctionInvalidConfigurationRequest = 0x42,
-  ExecutionFunctionInvalidSize = 0x43,
-  ExecutionFunctionTimeOut = 0x44,
-  RFRequestFailed = 0xDF,
-  NoRFdevicewiththatRFID = 0xE0,
-  BadRFIDNotProperFormat = 0xE1,
-  TooManyRFFevicesForThisPanel = 0xE2,
-  DuplicateRFID = 0xE3,
-  DuplicateAccessCard = 0xE4,
-  BadAccessCardData = 0XE5,
-  BadLanguageChoice = 0xE6,
-  BadSupervisionModeSelection = 0xE7,
-  BadEnableDisableChoice = 0xE8,
-  BadMonth = 0xE9,
-  BadDay = 0xEA,
-  BadHour = 0xEB,
-  BadMinute = 0xEC,
-  BadTimeEditChoice = 0xED,
-  BadRemoteEnable = 0xEF
-}
+import { BGFirmwareVersion } from './BGFirmwareVersion';
 
 export enum BGControllerError{
   InvalidProtocolLength = 'Invalid Protocol Length',
@@ -74,29 +29,6 @@ export enum BGControllerError{
   MaxAreaNumberError = 'Number of configured areas over controller maximum area number',
   MaxOutputNumberError = 'Number of configured outputs over controller maximum output number',
   ConnectionError = 'Control Panel Connection Error'
-}
-
-export enum BGUserType{
-  InstallerApp = 0x00, // Do not use
-  AutomationUser = 0x01,
-  RemoteUser = 0x02
-}
-
-export enum BGPanelType {
-  Undefined = 0x00,
-  Solution2000 = 0x20,
-  Solution3000 = 0x21,
-  AMAX2100 = 0x22,
-  AMAX3000 = 0x23,
-  AMAX4000 = 0x24,
-  D7412GV4 = 0x79,
-  D9412GV4 = 0x84,
-  B4512 = 0xAA0,
-  B5512 = 0xA4,
-  B8512G = 0xA6,
-  B9512G = 0xA7,
-  B3512 = 0xA8,
-  B6512 = 0xA9
 }
 
 enum MaxConnectionsInUseFlags {
@@ -141,6 +73,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     PanelRPSProtocolVersion = new BGProtocolVersion(0, 0, 0);
     PanelExecuteProtocolVersion = new BGProtocolVersion(0, 0, 0);
     PanelIIPVersion = new BGProtocolVersion(0, 0, 0);
+    FirmwareVersion = new BGFirmwareVersion(0, 0);
     PanelBusyFlag = false;
     PanelType = BGPanelType.Undefined;
     MaxAreas = 0;
@@ -411,12 +344,26 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x1F: // Mode2Capacitie
           if(Response === 0xFE){
             this.ReadMode2ReqPanelCapacitie(Data);
-            this.SendMode2ReqConfiguredAreas();
+            this.SendMode2ReqPanelSystemStatus();
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2Capacitie: ' + BGNegativeAcknowledgement[Data[2]]);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2Capacitie: ' + Data);
+            }
+          }
+          break;
+
+        case 0x20: // Mode2ReqPanelSystemStatus
+          if(Response === 0xFE){
+            this.ReadMode2ReqPanelSystemStatus(Data);
+            this.SendMode2ReqConfiguredAreas();
+          }else{
+            if(Response === 0xFE){
+              this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqPanelSystemStatus: '
+              + BGNegativeAcknowledgement[Data[2]]);
+            } else{
+              this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqPanelSystemStatus: ' + Data);
             }
           }
           break;
@@ -447,8 +394,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             }
           }
           break;
-
-
 
         case 0x24: // PanelConfiguredAreas
           if(Response === 0xFE){
@@ -608,7 +553,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
             }
           }
           break;
-
 
         case 0x38: //ReadMode2ReqPointsStatus
           if(Response === 0xFE){
@@ -2092,5 +2036,33 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       return Request;
+    }
+
+    // Function SendMode2ReqPanelSystemStatus()
+    // Return panel status
+    // Supported in Protocol Version 1.14
+    //
+    private SendMode2ReqPanelSystemStatus(){
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(1, 14, 0);
+      if(!this.PanelIIPVersion.GTE(MinVersion)){
+        this.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'SendMode2ReqPanelSystemStatus, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x20]);
+      const CommandFormat = new Uint8Array([]);
+      const Data = new Uint8Array([]);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data));
+    }
+
+    // Function ReadMode2ReqPanelSystemStatus()
+    // Return panel stauts
+    // Supported in Protocol Version 1.14
+    //
+    private ReadMode2ReqPanelSystemStatus(Data:Buffer){
+      this.FirmwareVersion.Version = Data[2];
+      this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
     }
 }

@@ -1,8 +1,8 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGController, BGPanelType, BGUserType, BGControllerError } from './BGController';
+import { BGPanelType, BGUserType, BGAreaStatus, BGAlarmPriority } from './BGConst';
+import { BGController, BGControllerError } from './BGController';
 import { BGPoint, BGPointStatus} from './BGPoint';
-import { BGAreaStatus, BGAlarmPriority } from './BGArea';
 import { HKSecurityPanel } from './HKSecurityPanel';
 import { HKMotionSensor } from './HKMotionSensor';
 import { HKContactSensor } from './HKContactSensor';
@@ -104,87 +104,101 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     const TempOutput: number[] = [];
 
     // Points
-    for(const Point of this.config.Points){
+    if(this.config.Points !== undefined){
+      for(const Point of this.config.Points){
 
-      // Point in config not found in panel;
-      if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
-        this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
-        return false;
+        // Point in config not found in panel;
+        if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
+          this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
+          return false;
+        }
+
+        //Check for duplicate point
+        if(TempPoint.indexOf(Point.PointNumber) !== -1){
+          this.log.error('Aborting: Dupicate Point ' + Point.PointNumber + ' in config file');
+          return false;
+        }
+
+        TempPoint.push(Point.PointNumber);
       }
-
-      //Check for duplicate point
-      if(TempPoint.indexOf(Point.PointNumber) !== -1){
-        this.log.error('Aborting: Dupicate Point ' + Point.PointNumber + ' in config file');
-        return false;
-      }
-
-      TempPoint.push(Point.PointNumber);
     }
 
     // Areas
-    for(const Area of this.config.Areas){
 
-      if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
-        this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
-        return false;
-      }
+    if(this.config.Areas !== undefined){
+      for(const Area of this.config.Areas){
 
-      //Check for duplicate area
-      if(TempArea.indexOf(Area.AreaNumber) !== -1){
-        this.log.error('Aborting: Duplicate Area ' + Area.AreaNumber + ' in config file');
-        return false;
-      }
-
-      // Check for Area In Scope (coma separated number values)
-      if(Area.AreaInScope === undefined || Area.AreaInScope === ''){
-        continue;
-      } else{
-        const ScopeStringArray = Area.AreaInScope.split(',');
-        const ScopeNumberArray:number[] = [];
-
-        for(let i = 0 ; i < ScopeStringArray.length ; i ++){
-
-          // check for valid numeric area number
-          if(this.Panel.GetAreas()[ScopeStringArray[i]] === undefined){
-            this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (invalid Area argument: \''
-            + ScopeStringArray[i] +'\'');
-            return false;
-          }
-
-          // check for duplicate area
-          if(ScopeNumberArray.indexOf(Number(ScopeStringArray[i])) !== -1){
-            this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (duplicate Area argument: '
-            + ScopeStringArray[i]);
-            return false;
-          }
-          ScopeNumberArray.push(Number(ScopeStringArray[i]));
+        if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
+          this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
+          return false;
         }
-      }
 
-      TempArea.push(Area.AreaNumber);
+        //Check for duplicate area
+        if(TempArea.indexOf(Area.AreaNumber) !== -1){
+          this.log.error('Aborting: Duplicate Area ' + Area.AreaNumber + ' in config file');
+          return false;
+        }
+
+        // Check for Area In Scope (coma separated number values)
+        if(Area.AreaInScope === undefined || Area.AreaInScope === ''){
+          continue;
+        } else{
+          const ScopeStringArray = Area.AreaInScope.split(',');
+          const ScopeNumberArray:number[] = [];
+
+          for(let i = 0 ; i < ScopeStringArray.length ; i ++){
+
+            // check for valid numeric area number
+            if(this.Panel.GetAreas()[ScopeStringArray[i]] === undefined){
+              this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (invalid Area argument: \''
+              + ScopeStringArray[i] +'\'');
+              return false;
+            }
+
+            // check for duplicate area
+            if(ScopeNumberArray.indexOf(Number(ScopeStringArray[i])) !== -1){
+              this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (duplicate Area argument: '
+              + ScopeStringArray[i]);
+              return false;
+            }
+            ScopeNumberArray.push(Number(ScopeStringArray[i]));
+          }
+        }
+
+        TempArea.push(Area.AreaNumber);
+      }
     }
 
+
+
     // Outputs
-    for(const Output of this.config.Outputs){
+    if(this.config.Outputs !== undefined){
+      for(const Output of this.config.Outputs){
 
-      if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
-        this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
-        return false;
+        if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
+          this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
+          return false;
+        }
+
+        //Check for duplicate output
+        if(TempOutput.indexOf(Output.OutputNumber) !== -1){
+          this.log.error('Aborting: Duplicate Output' + Output.OutputNumber + ' in config file');
+          return false;
+        }
+
+        TempOutput.push(Output.OutputNumber);
       }
-
-      //Check for duplicate output
-      if(TempOutput.indexOf(Output.OutputNumber) !== -1){
-        this.log.error('Aborting: Duplicate Output' + Output.OutputNumber + ' in config file');
-        return false;
-      }
-
-      TempOutput.push(Output.OutputNumber);
     }
 
     return true;
   }
 
   private DiscoverOutputs(){
+
+    // Return if no Outputs are configured in config file
+    if(this.config.Outputs === undefined){
+      return;
+    }
 
     for(const Output of this.config.Outputs){
 
@@ -209,6 +223,10 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   private DiscoverAreas(){
+
+    if(this.config.Areas === undefined){
+      return;
+    }
 
     for(const Area of this.config.Areas){
       const AreaInScope:number[] = [];
@@ -243,6 +261,10 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   private DiscoverPoints(){
+
+    if(this.config.Points === undefined){
+      return;
+    }
 
     for(const Point of this.config.Points){
 
@@ -517,6 +539,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Bosch Control Panel Information');
     this.log.info('-----------------------------------------');
     this.log.info('Panel Type: ' + BGPanelType[this.Panel.PanelType]);
+    this.log.info('Firmware: ' + this.Panel.FirmwareVersion.toSring());
     this.log.info('RPS Version: ' + this.Panel.PanelRPSProtocolVersion.toSring());
     this.log.info('Intrusion Protocol Version: ' + this.Panel.PanelIIPVersion.toSring());
     this.log.info('Execute Protocol Version: ' + this.Panel.PanelExecuteProtocolVersion.toSring());
