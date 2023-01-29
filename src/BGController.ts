@@ -8,6 +8,7 @@ import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
 import { BGFirmwareVersion } from './BGFirmwareVersion';
+import { chownSync } from 'fs';
 
 export enum BGControllerError{
   InvalidProtocolLength = 'Invalid Protocol Length',
@@ -2062,6 +2063,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 1.14
     //
     private ReadMode2ReqPanelSystemStatus(Data:Buffer){
+      console.log(Data);
       this.FirmwareVersion.Version = Data[2];
       this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
     }
