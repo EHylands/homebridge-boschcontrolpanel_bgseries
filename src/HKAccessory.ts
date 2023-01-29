@@ -12,19 +12,19 @@ export abstract class HKAccessory {
         protected readonly Serial:string,
     ) {
 
-      const uuid = this.platform.api.hap.uuid.generate(this.CreateUUID());
-      let accessory = this.platform.accessories.find(accessory => accessory.UUID === uuid);
+      const uuid = platform.api.hap.uuid.generate(this.CreateUUID());
+      let accessory = platform.accessories.find(accessory => accessory.UUID === uuid);
       if(accessory){
         this.platform.api.updatePlatformAccessories([accessory]);
       } else{
-        accessory = new this.platform.api.platformAccessory(this.Name, uuid);
+        accessory = new this.platform.api.platformAccessory(Name, uuid);
         this.platform.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
       platform.CreatedAccessories.push(accessory);
       this.Accessory = accessory;
 
       this.Accessory.getService(this.platform.Service.AccessoryInformation)!
-        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'BG Control Panel')
+        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Bosch Control Panel')
         .setCharacteristic(this.platform.Characteristic.Model, Model)
         .setCharacteristic(this.platform.Characteristic.SerialNumber, Serial)
         .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.platform.Panel.FirmwareVersion.toSring());
@@ -32,15 +32,8 @@ export abstract class HKAccessory {
 
     protected abstract CreateUUID(): string;
 
-    protected AddService(Type: WithUUID<typeof Service>, Name:string, Subtype?:string){
-
-      let service: Service | undefined;
-      if (Subtype) {
-        service = this.Accessory.getServiceById(Type, Subtype);
-      } else {
-        service = this.Accessory.getService(Type);
-      }
-
-      return service || this.Accessory.addService(Type, Name, Subtype);
+    protected useService(type: WithUUID<typeof Service>): Service {
+      const service = this.Accessory.getService(type);
+      return service || this.Accessory.addService(type);
     }
 }

@@ -206,7 +206,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         continue;
       }
 
-      const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
+      this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, Output.OutputNumber);
+
+      /*const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
       if (existingAccessory) {
         this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
@@ -218,7 +220,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
         this.CreatedAccessories.push(accessory);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      }
+      }*/
     }
   }
 

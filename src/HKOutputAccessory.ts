@@ -1,39 +1,30 @@
-import { Service, PlatformAccessory } from 'homebridge';
 import { HB_BoschControlPanel_BGSeries } from './platform';
-import { BGController } from './BGController';
+import { HKAccessory } from './HKAccessory';
 
-export class HKOutputAccessory {
-  private service: Service;
+export class HKOutputAccessory extends HKAccessory {
 
   constructor(
-    private readonly platform:HB_BoschControlPanel_BGSeries,
-    private readonly accessory: PlatformAccessory,
-    private readonly Panel: BGController,
+    protected readonly platform:HB_BoschControlPanel_BGSeries,
     readonly OutputNumber: number,
   ) {
 
-    this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + accessory.displayName);
+    super(platform, platform.Panel.GetOutputs()[OutputNumber].OutputText, 'BG Output', 'BGOutput' + OutputNumber);
 
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'BG Control Panel')
-      .setCharacteristic(this.platform.Characteristic.Model, 'BG Output')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'BGOutput' + OutputNumber)
-      .setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
+    this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + this.Accessory.displayName);
 
-    this.service = this.accessory.getService(this.platform.Service.Switch)
-    || this.accessory.addService(this.platform.Service.Switch);
-
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-
-    this.service.getCharacteristic(this.platform.Characteristic.On)
+    this.useService(this.platform.Service.Switch).getCharacteristic(this.platform.Characteristic.On)
       .onSet(this.HandleOnSet.bind(this));
   }
 
   HandleOnSet(value) {
-    this.Panel.SetOutputState(this.OutputNumber, value);
+    this.platform.Panel.SetOutputState(this.OutputNumber, value);
   }
 
   HandleOutputChange(State: boolean) {
-    this.service.updateCharacteristic(this.platform.Characteristic.On, State);
+    this.useService(this.platform.Service.Switch).updateCharacteristic(this.platform.Characteristic.On, State);
+  }
+
+  protected CreateUUID(): string{
+    return 'BGOutput' + this.platform.Panel.PanelType + this.OutputNumber;
   }
 }
