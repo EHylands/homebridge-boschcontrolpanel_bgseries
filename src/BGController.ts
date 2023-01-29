@@ -2062,9 +2062,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 1.14
     //
     private ReadMode2ReqPanelSystemStatus(Data:Buffer){
-      console.log('Firmware version');
-      console.log(Data);
       this.FirmwareVersion.Version = Data[2];
-      this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
+
+      if(this.PanelType === BGPanelType.Solution2000 || this.PanelType === BGPanelType.Solution3000){
+        this.FirmwareVersion.Revision = Data[3];
+      } else{
+        this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
+      }
     }
 }
