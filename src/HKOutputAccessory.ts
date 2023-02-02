@@ -11,8 +11,8 @@ export class HKOutputAccessory extends HKAccessory {
     super(
       platform,
       'BGOutput' + platform.Panel.PanelType + OutputNumber, // UUID, do not change
-      platform.Panel.GetOutputs()[OutputNumber].OutputText,
-      'BGOutput' + OutputNumber,
+      platform.Panel.GetOutputs()[OutputNumber].OutputText, // Accessory name
+      'BGOutput' + OutputNumber, // Accessory serial number
     );
 
     this.platform.log.info('Switch: Output' + OutputNumber + ' - ' + this.Accessory.displayName);
@@ -28,6 +28,4 @@ export class HKOutputAccessory extends HKAccessory {
   HandleOutputChange(State: boolean) {
     this.useService(this.platform.Service.Switch).updateCharacteristic(this.platform.Characteristic.On, State);
   }
-
-
 }

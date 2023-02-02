@@ -8,7 +8,6 @@ import { TypedEmitter } from 'tiny-typed-emitter';
 import tls = require('tls');
 import net = require('net');
 import { BGFirmwareVersion } from './BGFirmwareVersion';
-import { chownSync } from 'fs';
 
 export enum BGControllerError{
   InvalidProtocolLength = 'Invalid Protocol Length',
@@ -101,7 +100,43 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private PoolInterval = 500;
     private ForleLegacyMode = false;
     LegacyMode = false;
+    LegacyCommand = false;
+    LegacyPooling = false;
     private EventDataLength = 0;
+
+    // Panel Supported Features
+    // See WhatAreYou Command Format 3
+    FeatureProtocol01 = false;
+    FeatureProtocol02 = false;
+    FeatureProtocol03 = false;
+    FeatureProtocol04 = false;
+    FeatureProtocol05 = false;
+    Feature512BytesPacket = false;
+    Feature1460BytesPacket = false;
+    FeatureCommandWhatAreYouCF01 = false;
+    FeatureCommandWhatAreYouCF02 = false;
+    FeatureCommandWhatAreYouCF03 = false;
+    FeatureCommandWhatAreYouCF04 = false;
+    FeatureCommandWhatAreYouCF05 = false;
+    FeatureCommandWhatAreYouCF06 = false;
+    FeatureCommandWhatAreYouCF07 = false;
+    FeatureCommandRequestAreaTextCF01 = false;
+    FeatureCommandRequestAreaTextCF03 = false;
+    FeatureCommandRequestOuputTextCF01 = false;
+    FeatureCommandRequestOuputTextCF03 = false;
+    FeatureCommandRequestPointTextCF01 = false;
+    FeatureCommandRequestPointTextCF03 = false;
+    FeatureCommandRequestConfiguredAreaCF01 = false;
+    FeatureCommandArmPanelAreasCF01 = false;
+    FeatureCommandRequestConfiguredOutputsCF01 = false;
+    FeatureCommandRequestPointsInAreaCF01 = false;
+    FeatureCommandSetOutputStateCF01 = false;
+    FeatureCommandSetOutputStateCF02 = false;
+    FeatureCommandSetSubscriptionCF01 = false;
+    FeatureCommandSetSubscriptionCF02 = false;
+    FeatureCommandSetSubscriptionCF03 = false;
+    FeatureCommandSetSubscriptionCF04 = false;
+    FeatureCommandSetSubscriptionCF05 = false;
 
     constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
@@ -133,7 +168,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       };
 
       this.Socket = tls.connect(this.Port, this.Host, options, ()=>{
-        this.SendMode2WhatAreYou();
+        this.SendMode2WhatAreYou_CF03();
       });
 
       this.Socket.setTimeout(this.SocktetTimeout);
@@ -190,6 +225,22 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     SetOutputState(OutputNumer: number, State:boolean){
+
+      /*if(this.ForleLegacyMode){
+        this.SendMode2SetOutputState_CF01(OutputNumer, State);
+        return;
+      }
+
+      if(this.FeatureCommandSetOutputStateCF02){
+        this.SendMode2SetOutputState_CF02(OutputNumer, State);
+        return;
+      }
+
+      if(this.FeatureCommandSetOutputStateCF01){
+        this.SendMode2SetOutputState_CF01(OutputNumer, State);
+        return;
+      }*/
+
       if(this.LegacyMode){
         this.SendMode2SetOutputState_CF01(OutputNumer, State);
       } else{
@@ -281,7 +332,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       switch (LastCommand) {
         case 0x01: // Mode2WhatAreYou
           if(Response === 0xFE){
-            this.ReadMode2WhatAreYou(Data);
+            this.ReadMode2WhatAreYou_CF03(Data);
 
             if(this.PanelType === BGPanelType.Solution2000 ||
               this.PanelType === BGPanelType.Solution3000 ||
@@ -989,6 +1040,86 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       if(this.ForleLegacyMode){
         this.LegacyMode = true;
       }
+    }
+
+    // Function SendModeWhatAreYou
+    // Return information about the panel
+    // Command Format 3
+    // Supported in Protocol Version 5.
+    //
+    private SendMode2WhatAreYou_CF03(){
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x01]);
+      const CommandFormat = new Uint8Array([0x03]);
+      const Data = new Uint8Array([]);
+      this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data));
+    }
+
+    // Function ReadModeWhatAreYou
+    // Return information about the panel
+    // Command Format 3
+    // Supported in Protocol Version 5.72
+    //
+    private ReadMode2WhatAreYou_CF03(Data: Buffer){
+      this.PanelType = Data[2];
+      this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + (Data[6] << 8));
+      this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + (Data[10] << 8));
+      this.PanelExecuteProtocolVersion = new BGProtocolVersion(Data[11], Data[12], Data[13] + (Data[14] << 8));
+
+      this.PanelBusyFlag = false;
+      if(Data[15] === MaxConnectionsInUseFlags.MaxUserBasedRemoteAccessUsersInUse){
+        this.PanelBusyFlag = true;
+        this.emit('ControllerError', BGControllerError.PanelBusy, 'Mode2WhatAreYou: Max User Based Remote Access Users In Use');
+      }
+
+      if(Data[15] === MaxConnectionsInUseFlags.MaxAutomationUsersInUse){
+        this.PanelBusyFlag = true;
+        this.emit('ControllerError', BGControllerError.PanelBusy, 'Mode2WhatAreYou: Max Automation Users In Use');
+      }
+
+      // Data 16 - Month
+      // Data 17 - Day
+      // Data 18 - Year
+      // Data 19 - Hour
+      // Data 20 - Minute
+      // Data 21 - A-Link Protocol Version Major
+      // Data 22 - A-Link Protocol Version Minor
+      // Data 23 - A-Link Protocol Version Micro LSB
+      // Data 24 - A-Link Protocol Version Micro MSB
+
+      const BitMask = Data.slice(25, Data.length);
+      this.FeatureProtocol01 = (BitMask[0] & 0x80) !== 0;
+      this.FeatureProtocol02 = (BitMask[0] & 0x40) !== 0;
+      this.FeatureProtocol03 = (BitMask[0] & 0x20) !== 0;
+      this.FeatureProtocol04 = (BitMask[0] & 0x10) !== 0;
+      this.FeatureProtocol05 = (BitMask[0] & 0x08) !== 0;
+      this.Feature512BytesPacket = (BitMask[0] & 0x02) !== 0;
+      this.Feature1460BytesPacket = (BitMask[0] & 0x01) !== 0;
+      this.FeatureCommandWhatAreYouCF01 = (BitMask[1] & 0x80) !== 0;
+      this.FeatureCommandWhatAreYouCF02 = (BitMask[1] & 0x40) !== 0;
+      this.FeatureCommandWhatAreYouCF03 = (BitMask[1] & 0x20) !== 0;
+      this.FeatureCommandWhatAreYouCF04 = (BitMask[27] & 0x20) !== 0;
+      this.FeatureCommandWhatAreYouCF05 = (BitMask[27] & 0x10) !== 0;
+      this.FeatureCommandWhatAreYouCF06 = (BitMask[27] & 0x08) !== 0;
+      this.FeatureCommandWhatAreYouCF07 = (BitMask[30] & 0x10) !== 0;
+      this.FeatureCommandRequestConfiguredAreaCF01 = (BitMask[6] & 0x10) !== 0;
+      this.FeatureCommandArmPanelAreasCF01 = (BitMask[6] & 0x80) !== 0;
+      this.FeatureCommandRequestAreaTextCF01 = (BitMask[7] & 0x20) !== 0;
+      this.FeatureCommandRequestAreaTextCF03 = (BitMask[7] & 0x08) !== 0;
+      this.FeatureCommandRequestOuputTextCF01 = (BitMask[9] & 0x40) !== 0;
+      this.FeatureCommandRequestOuputTextCF03 = (BitMask[9] & 0x10) !== 0;
+      this.FeatureCommandRequestPointTextCF01 = (BitMask[11] & 0x80) !== 0;
+      this.FeatureCommandRequestPointTextCF03 = (BitMask[11] & 0x20) !== 0;
+      this.FeatureCommandArmPanelAreasCF01 = (BitMask[6] & 0x80) !== 0;
+      this.FeatureCommandRequestConfiguredOutputsCF01 = (BitMask[8] & 0x04) !== 0;
+      this.FeatureCommandSetOutputStateCF01 = (BitMask[8] & 0x01) !== 0;
+      this.FeatureCommandSetOutputStateCF02 = (BitMask[9] & 0x80) !== 0;
+      this.FeatureCommandRequestPointsInAreaCF01 = (BitMask[10] & 0x40) !== 0;
+      this.FeatureCommandSetSubscriptionCF01 = (BitMask[16] & 0x20) !== 0;
+      this.FeatureCommandSetSubscriptionCF02 = (BitMask[24] & 0x40) !== 0;
+      this.FeatureCommandSetSubscriptionCF03 = (BitMask[26] & 0x01) !== 0;
+      this.FeatureCommandSetSubscriptionCF04 = (BitMask[28] & 0x80) !== 0;
+      this.FeatureCommandSetSubscriptionCF04 = (BitMask[29] & 0x01) !== 0;
     }
 
     // Function SendMode2ReqAreaText_CF01
@@ -2059,12 +2190,17 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     // Function ReadMode2ReqPanelSystemStatus()
-    // Return panel stauts
+    // Return panel status
     // Supported in Protocol Version 1.14
     //
     private ReadMode2ReqPanelSystemStatus(Data:Buffer){
-      console.log(Data);
       this.FirmwareVersion.Version = Data[2];
-      this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
+
+      if(this.PanelType === BGPanelType.Solution2000 || this.PanelType === BGPanelType.Solution3000){
+        this.FirmwareVersion.Revision = Data[3];
+      } else{
+        this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
+      }
+
     }
 }
