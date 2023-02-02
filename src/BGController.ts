@@ -1061,6 +1061,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 5.72
     //
     private ReadMode2WhatAreYou_CF03(Data: Buffer){
+
       this.PanelType = Data[2];
       this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + (Data[6] << 8));
       this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + (Data[10] << 8));
@@ -1103,23 +1104,36 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.FeatureCommandWhatAreYouCF06 = (BitMask[27] & 0x08) !== 0;
       this.FeatureCommandWhatAreYouCF07 = (BitMask[30] & 0x10) !== 0;
       this.FeatureCommandRequestConfiguredAreaCF01 = (BitMask[6] & 0x10) !== 0;
-      this.FeatureCommandArmPanelAreasCF01 = (BitMask[6] & 0x80) !== 0;
+      this.FeatureCommandArmPanelAreasCF01 = (BitMask[7] & 0x80) !== 0;
       this.FeatureCommandRequestAreaTextCF01 = (BitMask[7] & 0x20) !== 0;
       this.FeatureCommandRequestAreaTextCF03 = (BitMask[7] & 0x08) !== 0;
+      this.FeatureCommandSetOutputStateCF01 = (BitMask[8] & 0x01) !== 0;
+      this.FeatureCommandSetOutputStateCF02 = (BitMask[9] & 0x80) !== 0;
       this.FeatureCommandRequestOuputTextCF01 = (BitMask[9] & 0x40) !== 0;
       this.FeatureCommandRequestOuputTextCF03 = (BitMask[9] & 0x10) !== 0;
+      this.FeatureCommandRequestPointsInAreaCF01 = (BitMask[10] & 0x40) !== 0;
       this.FeatureCommandRequestPointTextCF01 = (BitMask[11] & 0x80) !== 0;
       this.FeatureCommandRequestPointTextCF03 = (BitMask[11] & 0x20) !== 0;
       this.FeatureCommandArmPanelAreasCF01 = (BitMask[6] & 0x80) !== 0;
       this.FeatureCommandRequestConfiguredOutputsCF01 = (BitMask[8] & 0x04) !== 0;
-      this.FeatureCommandSetOutputStateCF01 = (BitMask[8] & 0x01) !== 0;
-      this.FeatureCommandSetOutputStateCF02 = (BitMask[9] & 0x80) !== 0;
-      this.FeatureCommandRequestPointsInAreaCF01 = (BitMask[10] & 0x40) !== 0;
       this.FeatureCommandSetSubscriptionCF01 = (BitMask[16] & 0x20) !== 0;
       this.FeatureCommandSetSubscriptionCF02 = (BitMask[24] & 0x40) !== 0;
       this.FeatureCommandSetSubscriptionCF03 = (BitMask[26] & 0x01) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[28] & 0x80) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[29] & 0x01) !== 0;
+
+      if(this.PanelType ===BGPanelType.Solution2000 ||
+        this.PanelType === BGPanelType.Solution3000 ||
+        this.PanelType === BGPanelType.AMAX2100 ||
+        this.PanelType === BGPanelType.AMAX3000 ||
+        this.PanelType === BGPanelType.AMAX4000
+      ){
+        this.LegacyMode = true;
+      }
+
+      if(this.ForleLegacyMode){
+        this.LegacyMode = true;
+      }
     }
 
     // Function SendMode2ReqAreaText_CF01

@@ -486,8 +486,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.debug('Command 0x33 - RequestOutputText_CF01: ' + this.Panel.FeatureCommandRequestOuputTextCF01 );
     this.log.debug('Command 0x33 - RequestOutputText_CF03: ' + this.Panel.FeatureCommandRequestOuputTextCF03 );
     this.log.debug('Command 0x36 - RequestPointsInArea_CF01: ' + this.Panel.FeatureCommandRequestPointsInAreaCF01 );
-    this.log.debug('Command 0x3C - RequestAreaText_CF01: ' + this.Panel.FeatureCommandRequestPointTextCF01 );
-    this.log.debug('Command 0x3C - RequestAreaText_CF03: ' + this.Panel.FeatureCommandRequestPointTextCF03 );
+    this.log.debug('Command 0x3C - RequestPointText_CF01: ' + this.Panel.FeatureCommandRequestPointTextCF01 );
+    this.log.debug('Command 0x3C - RequestPointText_CF03: ' + this.Panel.FeatureCommandRequestPointTextCF03 );
     this.log.debug('Command 0x5F - SetSubscription_CF01: ' + this.Panel.FeatureCommandSetSubscriptionCF01 );
     this.log.debug('Command 0x5F - SetSubscription_CF02: ' + this.Panel.FeatureCommandSetSubscriptionCF02 );
     this.log.debug('Command 0x5F - SetSubscription_CF03: ' + this.Panel.FeatureCommandSetSubscriptionCF03 );
