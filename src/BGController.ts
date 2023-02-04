@@ -98,10 +98,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private LowestAlarmPriority = -1;
     private InitialRun = true;
     private PoolInterval = 500;
-    private ForleLegacyMode = false;
     LegacyMode = false;
-    LegacyCommand = false;
-    LegacyPooling = false;
+
     private EventDataLength = 0;
 
     // Panel Supported Features
@@ -143,7 +141,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.Host = Host;
       this.Port = Port;
       this.Passcode = Passcode;
-      this.ForleLegacyMode = ForceLegacyMode;
+      this.LegacyMode = ForceLegacyMode;
       this.UserType = UserType;
       this.Socket = new net.Socket();
     }
@@ -156,7 +154,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.PanelReadyForOperation = false;
       this.PanelReceivingNotifcation = false;
       this.InitialRun = true;
-      this.LegacyMode = false;
       this.EventDataLength = 0;
 
       const options = {
@@ -168,7 +165,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       };
 
       this.Socket = tls.connect(this.Port, this.Host, options, ()=>{
-        this.SendMode2WhatAreYou_CF03();
+        if(this.LegacyMode){
+          this.SendMode2WhatAreYou_CF01();
+        } else{
+          this.SendMode2WhatAreYou_CF03();
+        }
       });
 
       this.Socket.setTimeout(this.SocktetTimeout);
@@ -224,9 +225,26 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       return this.Outputs;
     }
 
+    GetPanelUsingSubscription():boolean{
+      if(this.LegacyMode){
+        return false;
+      }
+
+      return this.FeatureProtocol02;
+    }
+
     SetOutputState(OutputNumer: number, State:boolean){
 
-      /*if(this.ForleLegacyMode){
+      if(this.LegacyMode){
+        this.SendMode2SetOutputState_CF01(OutputNumer, State);
+        return;
+      }
+
+      if(this.PanelType === BGPanelType.Solution2000 ||
+        this.PanelType === BGPanelType.Solution3000 ||
+        this.PanelType === BGPanelType.AMAX4000||
+        this.PanelType === BGPanelType.AMAX2100 ||
+        this.PanelType === BGPanelType.AMAX3000){
         this.SendMode2SetOutputState_CF01(OutputNumer, State);
         return;
       }
@@ -236,17 +254,30 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         return;
       }
 
-      if(this.FeatureCommandSetOutputStateCF01){
-        this.SendMode2SetOutputState_CF01(OutputNumer, State);
-        return;
-      }*/
+      // Last resort
+      this.SendMode2SetOutputState_CF01(OutputNumer, State);
+      return;
+    }
+
+    private ReadPanelText(){
 
       if(this.LegacyMode){
-        this.SendMode2SetOutputState_CF01(OutputNumer, State);
-      } else{
-        this.SendMode2SetOutputState_CF02(OutputNumer, State);
+        this.SendMode2ReqAreaText_CF01();
+        this.SendMode2ReqPointText_CF01();
+        this.SendMode2ReqOutputText_CF01();
+        return;
       }
-      return;
+
+      if(this.FeatureCommandRequestAreaTextCF03 &&
+        this.FeatureCommandRequestOuputTextCF03 &&
+        this.FeatureCommandRequestPointTextCF03){
+        this.SendMode2ReqAreaText_CF03(0);
+        return;
+      }
+
+      this.SendMode2ReqAreaText_CF01();
+      this.SendMode2ReqPointText_CF01();
+      this.SendMode2ReqOutputText_CF01();
     }
 
     private ControllerHasReadAllText():boolean{
@@ -276,10 +307,17 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     StartOperation(){
+
       if(this.LegacyMode){
         this.PoolPanel();
-      } else{
+        return;
+      }
+
+      // If subscriptions are available on panel
+      if(this.FeatureProtocol02){
         this.SendMode2SetSubscriptions();
+      } else{
+        this.PoolPanel();
       }
     }
 
@@ -332,7 +370,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       switch (LastCommand) {
         case 0x01: // Mode2WhatAreYou
           if(Response === 0xFE){
-            this.ReadMode2WhatAreYou_CF03(Data);
+
+            if(this.LegacyMode){
+              this.ReadMode2WhatAreYou_CF01(Data);
+            } else{
+              this.ReadMode2WhatAreYou_CF03(Data);
+            }
 
             if(this.PanelType === BGPanelType.Solution2000 ||
               this.PanelType === BGPanelType.Solution3000 ||
@@ -464,11 +507,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x26: // Mode2ReqAreaStatus
           if(Response === 0xFE){
-            if(this.LegacyMode){
-              this.ReadMode2ReqAreaStatus_CF01(Data);
-            } else{
-              this.ReadMode2ReqAreaStatus_CF02(Data);
-            }
+            this.ReadMode2ReqAreaStatus_CF01(Data);
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError,
@@ -493,12 +532,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x29: // Mode2ReqAreaText
           if(Response === 0xFE){
-            const LastArea = LastQueue[4];
-            if(this.LegacyMode){
+
+            if(this.LegacyMode || !this.FeatureCommandRequestAreaTextCF03){
+              const LastArea = LastQueue[4];
               this.ReadMode2ReqAreaText_CF01(Data, LastArea);
-            } else{
-              this.ReadMode2ReqAreaText_CF03(Data);
+              break;
             }
+
+            this.ReadMode2ReqAreaText_CF03(Data);
+
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAreaText: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -536,12 +578,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x3C: // Mode2ReqPointText
           if(Response === 0xFE){
-            if(this.LegacyMode){
+
+            if(this.LegacyMode || !this.FeatureCommandRequestPointTextCF03){
               const LastPoint = LastQueue[4];
               this.ReadMode2ReqPointText_CF01(Data, LastPoint);
-            } else{
-              this.ReadMode2ReqPointText_CF03(Data);
+              break;
             }
+
+            this.ReadMode2ReqPointText_CF03(Data);
+
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqPointText: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -554,14 +599,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x30: // Mode2ReqConfiguredOutputs
           if(Response === 0xFE){
             this.ReadMode2ReqConfiguredOutputs(Data);
+            this.ReadPanelText();
 
-            if(this.LegacyMode){
-              this.SendMode2ReqAreaText_CF01();
-              this.SendMode2ReqPointText_CF01();
-              this.SendMode2ReqOutputText_CF01();
-            } else{
-              this.SendMode2ReqAreaText_CF03(0);
-            }
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqConfiguredOutputs: '
@@ -574,11 +613,19 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         case 0x32: // Mode2SetOutputState
           if(Response === 0xFC){
+
             if(this.LegacyMode){
               this.ReadMode2SetOutputState_CF01();
-            } else{
-              this.ReadMode2SetOutputState_CF02();
+              break;
             }
+
+            if(this.FeatureCommandSetOutputStateCF02){
+              this.ReadMode2SetOutputState_CF02();
+              break;
+            }
+
+            this.ReadMode2SetOutputState_CF01();
+
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2SetOutputState:' + BGNegativeAcknowledgement[Data[2]]);
@@ -591,12 +638,14 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x33: // Mode2ReqOutputText
           if(Response === 0xFE){
 
-            if(this.LegacyMode){
+            if(this.LegacyMode || !this.FeatureCommandRequestAreaTextCF03){
               const LastOutput = LastQueue[3];
               this.ReadMode2ReqOutputText_CF01(Data, LastOutput);
-            } else{
-              this.ReadMode2ReqOutputText_CF03(Data);
+              break;
             }
+
+            this.ReadMode2ReqOutputText_CF03(Data);
+
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqOutputText: ' + BGNegativeAcknowledgement[Data[2]]);
@@ -998,7 +1047,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Command Format 1
     // Supported in Protocol Version 1.14
     //
-    private SendMode2WhatAreYou(){
+    private SendMode2WhatAreYou_CF01(){
       const Protocol = new Uint8Array([0x01]);
       const Command = new Uint8Array([0x01]);
       const CommandFormat = new Uint8Array([]);
@@ -1011,7 +1060,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Command Format 1
     // Supported in Protocol Version 1.14
     //
-    private ReadMode2WhatAreYou(Data: Buffer){
+    private ReadMode2WhatAreYou_CF01(Data: Buffer){
       this.PanelType = Data[2];
       this.PanelRPSProtocolVersion = new BGProtocolVersion(Data[3], Data[4], Data[5] + (Data[6] << 8));
       this.PanelIIPVersion = new BGProtocolVersion(Data[7], Data[8], Data[9] + (Data[10] << 8));
@@ -1036,16 +1085,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       ){
         this.LegacyMode = true;
       }
-
-      if(this.ForleLegacyMode){
-        this.LegacyMode = true;
-      }
     }
 
-    // Function SendModeWhatAreYou
+    // Function SendMode2WhatAreYou
     // Return information about the panel
     // Command Format 3
-    // Supported in Protocol Version 5.
+    // Supported in Protocol Version 5.72
     //
     private SendMode2WhatAreYou_CF03(){
       const Protocol = new Uint8Array([0x01]);
@@ -1114,26 +1159,12 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.FeatureCommandRequestPointsInAreaCF01 = (BitMask[10] & 0x40) !== 0;
       this.FeatureCommandRequestPointTextCF01 = (BitMask[11] & 0x80) !== 0;
       this.FeatureCommandRequestPointTextCF03 = (BitMask[11] & 0x20) !== 0;
-      this.FeatureCommandArmPanelAreasCF01 = (BitMask[6] & 0x80) !== 0;
       this.FeatureCommandRequestConfiguredOutputsCF01 = (BitMask[8] & 0x04) !== 0;
       this.FeatureCommandSetSubscriptionCF01 = (BitMask[16] & 0x20) !== 0;
       this.FeatureCommandSetSubscriptionCF02 = (BitMask[24] & 0x40) !== 0;
       this.FeatureCommandSetSubscriptionCF03 = (BitMask[26] & 0x01) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[28] & 0x80) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[29] & 0x01) !== 0;
-
-      if(this.PanelType ===BGPanelType.Solution2000 ||
-        this.PanelType === BGPanelType.Solution3000 ||
-        this.PanelType === BGPanelType.AMAX2100 ||
-        this.PanelType === BGPanelType.AMAX3000 ||
-        this.PanelType === BGPanelType.AMAX4000
-      ){
-        this.LegacyMode = true;
-      }
-
-      if(this.ForleLegacyMode){
-        this.LegacyMode = true;
-      }
     }
 
     // Function SendMode2ReqAreaText_CF01

@@ -19,17 +19,19 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 | [B Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf) |Supported|  |
 | [G Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Supported |  |
 | [GV4](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Status Pending | Firmware 2.00 and higher |
-| [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Will use Legacy Mode |
+| [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Data pooling for firmware <= 2.1 |
 | [AMAX Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/AMAX_panel_family_Installation_Manual_frFR_15867163019.pdf) | Status Pending| Firmware 4.01 and higher |
 
 
 ## Bosch Control Panel Configuration
-
-### RPS Software installation
+### Solution 2000/3000 Panels configuration
+TBD
+### B Series, G Series and GV4 Panels configuration
+#### RPS Software installation
 * Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
 * Initial connection to your Bosch Control Panel with RPS through network requires an RPS passcode. RPS passcode should be provided with your hardware. If RPS Passcode is not avaiblable, a connection to your panel can be established with a direct USB cable. 
 
-### Required Control Panel RPS configurations options
+#### Required Control Panel RPS configurations options
 * Connect your Bosch Control Panel to your home network through the on boad ethernet adapter. Note your Control Panel IP Address on your router or network logs. 
 * In AUTOMATION - REMOTE APP menu, set "Automation Device" to "Mode 2" 
 * In AUTOMATION - REMOTE APP menu, set an "Automation passcode" 
@@ -75,8 +77,6 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
 * Expect longer plugin start time 
 * Plugin will pool the panel rather then use push notifications (subscriptions). 
-* Legacy mode is used for Solution 2000/3000 panels
-* Legacy mode can be force in configuration page 
 
 ### Security System Accessory:
 The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 
