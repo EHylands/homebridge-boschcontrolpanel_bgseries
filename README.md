@@ -24,8 +24,8 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 
 ## Bosch Control Panel Configuration
-- [Solution 2000/3000 Panels configuration]()
-- [B Series, G Series and GV4 Panels configuration]()
+- [B Series, G Series and GV4 Panels]()
+- [Solution 2000/3000 Panels]()
 
 ## Homebride pluging configuration file
 ### General parameters

@@ -135,6 +135,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     FeatureCommandSetSubscriptionCF03 = false;
     FeatureCommandSetSubscriptionCF04 = false;
     FeatureCommandSetSubscriptionCF05 = false;
+    FeatureCommandReqAlarmAreasByPriorityCF01 = false;
+    FeatureCommandReqAlarmMemorySummaryCF01 = false;
 
     constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
@@ -308,17 +310,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
     StartOperation(){
 
+      // Pool panl in LegacyMode
       if(this.LegacyMode){
         this.PoolPanel();
         return;
       }
 
-      // If subscriptions are available on panel
+      // Enable subscriptions if available on panel
       if(this.FeatureProtocol02){
         this.SendMode2SetSubscriptions();
-      } else{
-        this.PoolPanel();
+        return;
       }
+
+      // Default to Pooling Panel
+      this.PoolPanel();
     }
 
     private PoolPanel(){
@@ -470,7 +475,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmAreasByPriority_CF01: '
-              + BGNegativeAcknowledgement[Data[2]]);
+              + BGNegativeAcknowledgement[Data[2]] + ' ' + Data);
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmAreasByPriority_CF01: ' + Data);
             }
@@ -619,6 +624,15 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
               break;
             }
 
+            if(this.PanelType === BGPanelType.Solution2000 ||
+              this.PanelType === BGPanelType.Solution3000 ||
+              this.PanelType === BGPanelType.AMAX4000||
+              this.PanelType === BGPanelType.AMAX2100 ||
+              this.PanelType === BGPanelType.AMAX3000){
+              this.ReadMode2SetOutputState_CF01();
+              break;
+            }
+
             if(this.FeatureCommandSetOutputStateCF02){
               this.ReadMode2SetOutputState_CF02();
               break;
@@ -638,7 +652,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         case 0x33: // Mode2ReqOutputText
           if(Response === 0xFE){
 
-            if(this.LegacyMode || !this.FeatureCommandRequestAreaTextCF03){
+            if(this.LegacyMode || !this.FeatureCommandRequestOuputTextCF03){
               const LastOutput = LastQueue[3];
               this.ReadMode2ReqOutputText_CF01(Data, LastOutput);
               break;
@@ -1165,6 +1179,8 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.FeatureCommandSetSubscriptionCF03 = (BitMask[26] & 0x01) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[28] & 0x80) !== 0;
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[29] & 0x01) !== 0;
+      this.FeatureCommandReqAlarmAreasByPriorityCF01 = (BitMask[5] & 0x01) !== 0;
+      this.FeatureCommandReqAlarmMemorySummaryCF01 = (BitMask[2] & 0x20) !== 0;
     }
 
     // Function SendMode2ReqAreaText_CF01
@@ -1962,6 +1978,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // Supported in Protocol Version 1.24
     //
     private ReadMode2ReqAlarmMemorySummary_CF01(Data:Buffer){
+
+      console.log('Alarm Memory Summary:');
+      console.log(Data.slice(2, Data.length));
+
       Data = Data.slice(2, Data.length);
       let AlarmDetected = false;
       this.LowestAlarmPriority = -1;
@@ -1985,7 +2005,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       if(!AlarmDetected){
-
         setTimeout(() => {
           this.PoolPanel();
         }, this.PoolInterval);

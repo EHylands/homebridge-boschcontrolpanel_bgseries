@@ -107,6 +107,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     if(this.config.Points !== undefined){
       for(const Point of this.config.Points){
 
+        if(Point.PointNumber === undefined){
+          this.log.error('Aborting: Point with undefined PointNumber found in config file.');
+          return false;
+        }
+
         // Point in config not found in panel;
         if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
           this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
@@ -127,6 +132,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(this.config.Areas !== undefined){
       for(const Area of this.config.Areas){
+
+        if(Area.AreaNumber === undefined){
+          this.log.error('Aborting: Area with undefined AreaNumber found in config file.');
+          return false;
+        }
 
         if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
           this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
@@ -172,6 +182,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     // Outputs
     if(this.config.Outputs !== undefined){
       for(const Output of this.config.Outputs){
+
+        if(Output.OutputNumber === undefined){
+          this.log.error('Aborting: Output with undefined OutputNumber found in config file.');
+          return false;
+        }
 
         if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
           this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
@@ -300,6 +315,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   discoverDevices() {
+
+    this.log.info('Configuring Panel, this may take a few minutes ...');
+
     this.Panel.on('PanelReadyForOperation', () => {
 
       // Phase 2 config file check
@@ -478,6 +496,8 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.log.debug('Command 0x01 - WhatAreYou_CF05: ' + this.Panel.FeatureCommandWhatAreYouCF05);
       this.log.debug('Command 0x01 - WhatAreYou_CF06: ' + this.Panel.FeatureCommandWhatAreYouCF06);
       this.log.debug('Command 0x01 - WhatAreYou_CF07: ' + this.Panel.FeatureCommandWhatAreYouCF07);
+      this.log.debug('Command 0x08 - ReqAlarmMemorySummary_CF01: ' + this.Panel.FeatureCommandReqAlarmMemorySummaryCF01);
+      this.log.debug('Command 0x22 - ReqAlarmAreasByPriority_CF01: ' + this.Panel.FeatureCommandReqAlarmAreasByPriorityCF01);
       this.log.debug('Command 0x24 - RequestConfiguredArea_CF01: ' + this.Panel.FeatureCommandRequestConfiguredAreaCF01 );
       this.log.debug('Command 0x27 - ArmPanelAreas_CF01: ' + this.Panel.FeatureCommandArmPanelAreasCF01 );
       this.log.debug('Command 0x29 - RequestAreaText_CF01: ' + this.Panel.FeatureCommandRequestAreaTextCF01 );
