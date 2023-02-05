@@ -7,4 +7,4 @@
 ## Homebridge Plugin Configuration
 - Use User Keypad Passcode
 ## Notes
-1- Panel Onboard Outputs (Horn, Strobe) cannot be use in config file (Not accessible from Bosch automation protocol) To be used in this plugin, an ouput must be configured as a `remote control` output.
+- Panel Onboard Outputs (Horn, Strobe) cannot be use in config file (Not accessible from Bosch automation protocol) To be used in this plugin, an ouput must be configured as a `remote control` output.

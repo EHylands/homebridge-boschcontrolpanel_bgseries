@@ -31,8 +31,8 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 ### General parameters
 * `Host`:  Bosch Control Panel IP address
 * `Port`:  Bosch Control Panel Port number (defaults to 7700)
-* `Automation passcode`: Value as configured on your Bosch Control Panel
-* `Legacy Mode`: Force plugin to use first generation protocol
+* `Passcode`: Value as configured on your Bosch Control Panel (Automation Passcode on B, G , GV4 Panels, User Passcode on Solution 2000/3000 and AMAX Panels).
+* `Legacy Mode`: Force plugin to use first generation protocol and data pooling.
 ### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)

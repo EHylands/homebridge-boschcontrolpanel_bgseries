@@ -17,13 +17,13 @@
         "default" : 7700
       },
       "Passcode":{
-        "title":"Automation Passcode",
+        "title":"Passcode",
         "type": "string",
         "required": true,
         "default": ""
       },
       "ForceLegacyMode":{
-        "title":"Force Legacy Mode",
+        "title":"Legacy Mode",
         "type": "boolean",
         "required": true,
         "default": false
