@@ -24,29 +24,15 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 
 
 ## Bosch Control Panel Configuration
-### Solution 2000/3000 Panels configuration
-TBD
-### B Series, G Series and GV4 Panels configuration
-#### RPS Software installation
-* Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
-* Initial connection to your Bosch Control Panel with RPS through network requires an RPS passcode. RPS passcode should be provided with your hardware. If RPS Passcode is not avaiblable, a connection to your panel can be established with a direct USB cable. 
-
-#### Required Control Panel RPS configurations options
-* Connect your Bosch Control Panel to your home network through the on boad ethernet adapter. Note your Control Panel IP Address on your router or network logs. 
-* In AUTOMATION - REMOTE APP menu, set "Automation Device" to "Mode 2" 
-* In AUTOMATION - REMOTE APP menu, set an "Automation passcode" 
-* In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR menu, note TCP/UDP PORT NUMBER (defaults to 7700) 
-* Your Bosch Control Panel needs to be update to a recent firmware with RPS Software 
-1. Needed for a secure connection using TLS > 1.0 with Homebridge
-2. Intrusion Integration Protocol Version >= 5.208 needed for push notifications
+- [Solution 2000/3000 Panels configuration]()
+- [B Series, G Series and GV4 Panels configuration]()
 
 ## Homebride pluging configuration file
 ### General parameters
-* `Name` : Plugin name
 * `Host`:  Bosch Control Panel IP address
 * `Port`:  Bosch Control Panel Port number (defaults to 7700)
 * `Automation passcode`: Value as configured on your Bosch Control Panel
-* `Force Legacy Mode`: Force plugin to use first generation protocol
+* `Legacy Mode`: Force plugin to use first generation protocol
 ### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
