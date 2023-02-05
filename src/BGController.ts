@@ -475,7 +475,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           }else{
             if(Response === 0xFD){
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmAreasByPriority_CF01: '
-              + BGNegativeAcknowledgement[Data[2]] + ' ' + Data);
+              + BGNegativeAcknowledgement[Data[2]]);
+
+              console.log(Data);
+
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmAreasByPriority_CF01: ' + Data);
             }
@@ -1993,8 +1996,10 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         if(AlarmCount === 0 ){
           for( const AreaNumber in this.Areas){
             const Area = this.Areas[AreaNumber];
-            if(Area.RemoveAlarm(AlarmPriority)){
-              this.emit('AreaAlarmStateChange', Area);
+            if(Area !== undefined){
+              if(Area.RemoveAlarm(AlarmPriority)){
+                this.emit('AreaAlarmStateChange', Area);
+              }
             }
           }
         } else{
@@ -2028,6 +2033,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x22]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([AlarmPriority]);
+
+      console.log('Sending Mode2ReqAlarmAreasByPriority_CF01: ' + AlarmPriority);
+
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data));
     }
 
@@ -2039,10 +2047,18 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       Data = Data.slice(2, Data.length);
       let AreaAlarm = false;
 
+      console.log('Reading Mode2ReqAlarmAreasByPriority_CF01');
+      console.log('Alarm Priority: ' + AlarmPriority);
+      console.log(Data);
+
       for(const AreaNumber in this.Areas){
         const Area = this.Areas[AreaNumber];
         const Num = Number(AreaNumber);
         const Index = Math.floor(Num/8);
+
+        if(Area === undefined){
+          continue;
+        }
 
         AreaAlarm = false;
         if(Index < Data.length){
