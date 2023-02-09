@@ -7,7 +7,7 @@ export enum BGPanelType {
     AMAX4000 = 0x24,
     D7412GV4 = 0x79,
     D9412GV4 = 0x84,
-    B4512 = 0xAA0,
+    B4512 = 0xA0,
     B5512 = 0xA4,
     B8512G = 0xA6,
     B9512G = 0xA7,

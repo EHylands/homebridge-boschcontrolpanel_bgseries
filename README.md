@@ -4,7 +4,7 @@
 [![npm downloads](https://badgen.net/npm/dt/homebridge-boschcontrolpanel_bgseries)](https://www.npmjs.com/package/homebridge-boschcontrolpanel_bgseries)
 
 
-This Homebridge plugin allows interactions with your Bosch Control Panel
+This Homebridge plugin allows interactions with your Bosch Control Panel supporting Mode 2 integration.
 
 * Set Panel Area arming mode (Arm, Disarm, Part on instant, Part on delay)
 * Set Panel Outputs state (On, Off)
@@ -19,32 +19,20 @@ This Homebridge plugin allows interactions with your Bosch Control Panel
 | [B Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/B_Series_Quick_Selec_Commercial_Brochure_enUS_23341998603.pdf) |Supported|  |
 | [G Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Supported |  |
 | [GV4](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Status Pending | Firmware 2.00 and higher |
-| [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Will use Legacy Mode |
+| [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Data pooling for firmware <= 2.1 |
 | [AMAX Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/AMAX_panel_family_Installation_Manual_frFR_15867163019.pdf) | Status Pending| Firmware 4.01 and higher |
 
 
 ## Bosch Control Panel Configuration
-
-### RPS Software installation
-* Connect to your Bosch Control Panel with [RPS Software](https://www2.boschsecurity.us/bseriesinstall/programming).
-* Initial connection to your Bosch Control Panel with RPS through network requires an RPS passcode. RPS passcode should be provided with your hardware. If RPS Passcode is not avaiblable, a connection to your panel can be established with a direct USB cable. 
-
-### Required Control Panel RPS configurations options
-* Connect your Bosch Control Panel to your home network through the on boad ethernet adapter. Note your Control Panel IP Address on your router or network logs. 
-* In AUTOMATION - REMOTE APP menu, set "Automation Device" to "Mode 2" 
-* In AUTOMATION - REMOTE APP menu, set an "Automation passcode" 
-* In PANEL WIDE PARAMETERS - ON BOARD ETHERNET COMMUNICATOR menu, note TCP/UDP PORT NUMBER (defaults to 7700) 
-* Your Bosch Control Panel needs to be update to a recent firmware with RPS Software 
-1. Needed for a secure connection using TLS > 1.0 with Homebridge
-2. Intrusion Integration Protocol Version >= 5.208 needed for push notifications
+- [B Series, G Series and GV4 Panels]()
+- [Solution 2000/3000 Panels]()
 
 ## Homebride pluging configuration file
 ### General parameters
-* `Name` : Plugin name
 * `Host`:  Bosch Control Panel IP address
 * `Port`:  Bosch Control Panel Port number (defaults to 7700)
-* `Automation passcode`: Value as configured on your Bosch Control Panel
-* `Force Legacy Mode`: Force plugin to use first generation protocol
+* `Passcode`: Value as configured on your Bosch Control Panel (Automation Passcode on B, G , GV4 Panels, User Passcode on Solution 2000/3000 and AMAX Panels).
+* `Legacy Mode`: Force plugin to use first generation protocol and data pooling.
 ### Areas (Only add areas to be monitored by Homebridge)
 * `Number`: Area number on the Control Panel to be monitored by the plugin
 * `Area(s) in Scope`: Comma separated list of other Areas on your Control Panel to be monitored by this accessory. If an alarm is triggered in one of those Area, your accessory will trigger (Default value: Empty string)
@@ -72,11 +60,10 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 
 ## Operation
 ### Legacy Mode:
-In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
+Whit this option enabled, the plugin will only use first generation protocol to exchange data with the panel.
 * Expect longer plugin start time 
-* Plugin will pool the panel rather then use push notifications (subscriptions). 
-* Legacy mode is used for Solution 2000/3000 panels
-* Legacy mode can be force in configuration page 
+* Plugin will pool the panel rather then use push notifications (subscriptions)
+* Any event occuring for a very short amount of time on the panel may not be detected by the plugin in this mode (Sensor only triggering for 1 second, Output automaticaly changing state after 1 second)
 
 ### Security System Accessory:
 The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 

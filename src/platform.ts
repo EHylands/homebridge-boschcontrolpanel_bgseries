@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { BGPanelType, BGUserType, BGAreaStatus, BGAlarmPriority } from './BGConst';
 import { BGController, BGControllerError } from './BGController';
-import { BGPoint, BGPointStatus} from './BGPoint';
+import { BGPointStatus} from './BGPoint';
 import { HKSecurityPanel } from './HKSecurityPanel';
 import { HKMotionSensor } from './HKMotionSensor';
 import { HKContactSensor } from './HKContactSensor';
@@ -107,6 +107,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     if(this.config.Points !== undefined){
       for(const Point of this.config.Points){
 
+        if(Point.PointNumber === undefined){
+          this.log.error('Aborting: Point with undefined PointNumber found in config file.');
+          return false;
+        }
+
         // Point in config not found in panel;
         if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
           this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
@@ -127,6 +132,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(this.config.Areas !== undefined){
       for(const Area of this.config.Areas){
+
+        if(Area.AreaNumber === undefined){
+          this.log.error('Aborting: Area with undefined AreaNumber found in config file.');
+          return false;
+        }
 
         if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
           this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
@@ -169,11 +179,14 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       }
     }
 
-
-
     // Outputs
     if(this.config.Outputs !== undefined){
       for(const Output of this.config.Outputs){
+
+        if(Output.OutputNumber === undefined){
+          this.log.error('Aborting: Output with undefined OutputNumber found in config file.');
+          return false;
+        }
 
         if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
           this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
@@ -202,28 +215,15 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     for(const Output of this.config.Outputs){
 
-      if(!Output.Active){
-        continue;
-      }
-
-      const uuid = this.api.hap.uuid.generate('BGOutput' + this.Panel.PanelType + Output.OutputNumber);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-      if (existingAccessory) {
-        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, existingAccessory, this.Panel, Output.OutputNumber);
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const PanelOutput = this.Panel.GetOutputs()[Output.OutputNumber];
-        const OutputText = PanelOutput.OutputText;
-        const accessory = new this.api.platformAccessory(OutputText, uuid);
-        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, accessory, this.Panel, Output.OutputNumber);
-        this.CreatedAccessories.push(accessory);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      if(Output.Active){
+        this.OutputsArray[Output.OutputNumber] = new HKOutputAccessory(this, Output.OutputNumber);
       }
     }
   }
 
   private DiscoverAreas(){
 
+    // Return if no Areas are configured in config file
     if(this.config.Areas === undefined){
       return;
     }
@@ -232,63 +232,56 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       const AreaInScope:number[] = [];
       const PasscodeFollowsScope = Area.PasscodeFollowsScope;
 
-      if(!Area.Active){
-        continue;
-      }
-
-      if(Area.AreaInScope !== undefined && Area.AreaInScope !== ''){
-        const ScopeStringArray = Area.AreaInScope.split(',');
-        for(let i = 0 ; i < ScopeStringArray.length ; i ++){
-          AreaInScope.push(Number(ScopeStringArray[i]));
+      if(Area.Active){
+        if(Area.AreaInScope !== undefined && Area.AreaInScope !== ''){
+          const ScopeStringArray = Area.AreaInScope.split(',');
+          for(let i = 0 ; i < ScopeStringArray.length ; i ++){
+            AreaInScope.push(Number(ScopeStringArray[i]));
+          }
         }
-      }
 
-      const uuid = this.api.hap.uuid.generate('BGArea' + this.Panel.PanelType + Area.AreaNumber);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-
-      if (existingAccessory) {
-        this.ControlPanelArray.push(new HKSecurityPanel(this, existingAccessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const PanelArea = this.Panel.GetAreas()[Area.AreaNumber];
-        const AreaText = PanelArea.AreaText;
-        const accessory = new this.api.platformAccessory(AreaText, uuid);
-        this.ControlPanelArray.push(new HKSecurityPanel(this, accessory, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
-        this.CreatedAccessories.push(accessory);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.ControlPanelArray.push(new HKSecurityPanel(this, Area.AreaNumber, AreaInScope, PasscodeFollowsScope));
       }
     }
   }
 
   private DiscoverPoints(){
 
+    // Return if no Points are configured in config file
     if(this.config.Points === undefined){
       return;
     }
 
     for(const Point of this.config.Points){
+      if(Point.Active){
 
-      if(!Point.Active){
-        continue;
-      }
+        switch(Point.SensorType){
 
-      const PointInPanel = this.Panel.GetPoints()[Point.PointNumber];
-      const PointText = PointInPanel.PointText;
-      const uuid = this.api.hap.uuid.generate('BGPoint' + this.Panel.PanelType + Point.SensorType + PointInPanel.PointNumber);
+          case BGSensorType.MotionSensor:{
+            this.PointsArray[Point.PointNumber] = new HKMotionSensor(this, Point.PointNumber);
+            break;
+          }
 
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-      if (existingAccessory) {
-        existingAccessory.context.SensorType = Point.SensorType;
-        existingAccessory.context.PointNumber = Point.PointNumber;
-        this.CreateSensor(existingAccessory, PointInPanel);
-        this.CreatedAccessories.push(existingAccessory);
-      } else{
-        const accessory = new this.api.platformAccessory(PointText, uuid);
-        accessory.context.SensorType = Point.SensorType;
-        accessory.context.PointNumber = Point.PointNumber;
-        this.CreateSensor(accessory, PointInPanel);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-        this.CreatedAccessories.push(accessory);
+          case BGSensorType.ContactSensor:{
+            this.PointsArray[Point.PointNumber] =new HKContactSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.LeakSensor :{
+            this.PointsArray[Point.PointNumber] = new HKLeakSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.SmokeSensor :{
+            this.PointsArray[Point.PointNumber] = new HKSmokeSensor(this, Point.PointNumber);
+            break;
+          }
+
+          case BGSensorType.COSensor :{
+            this.PointsArray[Point.PointNumber] = new HKCOSensor(this, Point.PointNumber);
+            break;
+          }
+        }
       }
     }
   }
@@ -322,6 +315,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   }
 
   discoverDevices() {
+
+    this.log.info('Configuring Panel, this may take a few minutes ...');
+
     this.Panel.on('PanelReadyForOperation', () => {
 
       // Phase 2 config file check
@@ -359,11 +355,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     this.Panel.on('PointStatusChange', (Point) => {
       const message = 'Panel: Point' + Point.PointNumber + '(' + Point.PointText + '): ' + BGPointStatus[Point.PointStatus];
-      if(this.config.LogPoint){
-        this.log.info(message);
-      } else{
-        this.log.debug(message);
-      }
+      this.AdvanceLog(this.config.LogPoint, message);
 
       if(this.PointsArray[Point.PointNumber] !== undefined){
         this.PointsArray[Point.PointNumber].HandleEventDetected(Point.PointStatus);
@@ -372,11 +364,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     this.Panel.on('OutputStateChange', (Output)=>{
       const message = 'Panel: Output' + Output.OutputNumber + '(' + Output.OutputText + '): ' + Output.OutputState;
-      if(this.config.LogOutput){
-        this.log.info(message);
-      } else{
-        this.log.debug(message);
-      }
+      this.AdvanceLog(this.config.LogOutput, message);
 
       if(this.OutputsArray[Output.OutputNumber] !== undefined){
         this.OutputsArray[Output.OutputNumber].HandleOutputChange(Output.OutputState);
@@ -387,22 +375,14 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
       if(Area.GetIsAlarmNominal()){
         const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): AlarmState: Normal';
-        if(this.config.LogAreaAlarm){
-          this.log.info(message);
-        } else{
-          this.log.debug(message);
-        }
+        this.AdvanceLog(this.config.LogAreaAlarm, message);
       } else{
 
         const FireAlarm = Area.GetFireAlarm();
         if(FireAlarm.length > 0){
           for (const Alarm of FireAlarm){
             const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Fire - ' + BGAlarmPriority[Alarm];
-            if(this.config.LogAreaAlarm){
-              this.log.info(message);
-            } else{
-              this.log.debug(message);
-            }
+            this.AdvanceLog(this.config.LogAreaAlarm, message);
           }
         }
 
@@ -410,11 +390,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         if(BurglaryAlarm.length > 0){
           for (const Alarm of BurglaryAlarm){
             const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Burglary - ' + BGAlarmPriority[Alarm];
-            if(this.config.LogAreaAlarm){
-              this.log.info(message);
-            } else{
-              this.log.debug(message);
-            }
+            this.AdvanceLog(this.config.LogAreaAlarm, message);
           }
         }
 
@@ -422,11 +398,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         if(GazAlarm.length > 0){
           for (const Alarm of GazAlarm){
             const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Gas - ' + BGAlarmPriority[Alarm];
-            if(this.config.LogAreaAlarm){
-              this.log.info(message);
-            } else{
-              this.log.debug(message);
-            }
+            this.AdvanceLog(this.config.LogAreaAlarm, message);
           }
         }
 
@@ -434,11 +406,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         if(PersonnalAlarm.length > 0 ){
           for (const Alarm of BurglaryAlarm){
             const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): Personnal - ' + BGAlarmPriority[Alarm];
-            if(this.config.LogAreaAlarm){
-              this.log.info(message);
-            } else{
-              this.log.debug(message);
-            }
+            this.AdvanceLog(this.config.LogAreaAlarm, message);
           }
         }
       }
@@ -447,21 +415,13 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     // Set notification management for Confidence messages sent by panel
     this.Panel.on('ConfidenceMessage', () => {
       const message = 'Panel: Received Confidence Message';
-      if(this.config.LogConfidenceMessage){
-        this.log.info(message);
-      } else{
-        this.log.debug(message);
-      }
+      this.AdvanceLog(this.config.LogConfidenceMessage, message);
       this.ReceivingPanelNotification = true;
     });
 
     this.Panel.on('AreaOnOffStateChange', (Area)=>{
       const message = 'Panel: Area' + Area.AreaNumber + '(' + Area.AreaText + '): ' + BGAreaStatus[Area.AreaStatus];
-      if(this.config.LogAreaArmingStatus){
-        this.log.info(message);
-      } else{
-        this.log.debug(message);
-      }
+      this.AdvanceLog(this.config.LogAreaArmingStatus, message);
     });
 
     this.Panel.on('ControllerError', (Error, ErrorString) => {
@@ -503,37 +463,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     }
   }
 
-  private CreateSensor(Accessory: PlatformAccessory, Point:BGPoint){
-
-    switch(Accessory.context.SensorType){
-
-      case BGSensorType.MotionSensor:{
-        this.PointsArray[Point.PointNumber] = new HKMotionSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.ContactSensor:{
-        this.PointsArray[Point.PointNumber] =new HKContactSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.LeakSensor :{
-        this.PointsArray[Point.PointNumber] = new HKLeakSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.SmokeSensor :{
-        this.PointsArray[Point.PointNumber] = new HKSmokeSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-
-      case BGSensorType.COSensor :{
-        this.PointsArray[Point.PointNumber] = new HKCOSensor(this, Accessory, this.Panel, Point.PointNumber);
-        break;
-      }
-    }
-  }
-
   private DumpPanelInfo(){
     this.log.info('-----------------------------------------');
     this.log.info('Bosch Control Panel Information');
@@ -550,6 +479,44 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.log.info('Panel Max Keypads: ' + this.Panel.MaxKeypads);
     this.log.info('Panel Max Doors: ' + this.Panel.MaxDoors);
     this.log.info('Panel Legacy Mode: ' + this.Panel.LegacyMode);
+    this.log.info('Panel Using Subscriptions: '+ this.Panel.GetPanelUsingSubscription()) ;
+
+    if(!this.ForceLegacyMode){
+      this.log.debug('Protocol 0x01: ' + this.Panel.FeatureProtocol01);
+      this.log.debug('Protocol 0x02: ' + this.Panel.FeatureProtocol02);
+      this.log.debug('Protocol 0x03: ' + this.Panel.FeatureProtocol03);
+      this.log.debug('Protocol 0x04: ' + this.Panel.FeatureProtocol04);
+      this.log.debug('Protocol 0x05: ' + this.Panel.FeatureProtocol05);
+      this.log.debug('Packet(512 Bytes): ' + this.Panel.Feature512BytesPacket);
+      this.log.debug('Packet(1460 Bytes): ' + this.Panel.Feature1460BytesPacket);
+      this.log.debug('Command 0x01 - WhatAreYou_CF01: ' + this.Panel.FeatureCommandWhatAreYouCF01);
+      this.log.debug('Command 0x01 - WhatAreYou_CF02: ' + this.Panel.FeatureCommandWhatAreYouCF02);
+      this.log.debug('Command 0x01 - WhatAreYou_CF03: ' + this.Panel.FeatureCommandWhatAreYouCF03 );
+      this.log.debug('Command 0x01 - WhatAreYou_CF04: ' + this.Panel.FeatureCommandWhatAreYouCF04);
+      this.log.debug('Command 0x01 - WhatAreYou_CF05: ' + this.Panel.FeatureCommandWhatAreYouCF05);
+      this.log.debug('Command 0x01 - WhatAreYou_CF06: ' + this.Panel.FeatureCommandWhatAreYouCF06);
+      this.log.debug('Command 0x01 - WhatAreYou_CF07: ' + this.Panel.FeatureCommandWhatAreYouCF07);
+      this.log.debug('Command 0x08 - ReqAlarmMemorySummary_CF01: ' + this.Panel.FeatureCommandReqAlarmMemorySummaryCF01);
+      this.log.debug('Command 0x22 - ReqAlarmAreasByPriority_CF01: ' + this.Panel.FeatureCommandReqAlarmAreasByPriorityCF01);
+      this.log.debug('Command 0x23 - ReqAlarmMemoryDetail_CF01: ' + this.Panel.FeatureCommandReqAlarmMemoryDetailCF01 );
+      this.log.debug('Command 0x24 - RequestConfiguredArea_CF01: ' + this.Panel.FeatureCommandRequestConfiguredAreaCF01 );
+      this.log.debug('Command 0x27 - ArmPanelAreas_CF01: ' + this.Panel.FeatureCommandArmPanelAreasCF01 );
+      this.log.debug('Command 0x29 - RequestAreaText_CF01: ' + this.Panel.FeatureCommandRequestAreaTextCF01 );
+      this.log.debug('Command 0x29 - RequestAreaText_CF03: ' + this.Panel.FeatureCommandRequestAreaTextCF03 );
+      this.log.debug('Command 0x30 - RequestConfiguredOutputs_CF01: ' + this.Panel.FeatureCommandRequestConfiguredOutputsCF01 );
+      this.log.debug('Command 0x32 - SetOutputState_CF01: ' + this.Panel.FeatureCommandSetOutputStateCF01 );
+      this.log.debug('Command 0x32 - SetOutputState_CF02: ' + this.Panel.FeatureCommandSetOutputStateCF02 );
+      this.log.debug('Command 0x33 - RequestOutputText_CF01: ' + this.Panel.FeatureCommandRequestOuputTextCF01 );
+      this.log.debug('Command 0x33 - RequestOutputText_CF03: ' + this.Panel.FeatureCommandRequestOuputTextCF03 );
+      this.log.debug('Command 0x36 - RequestPointsInArea_CF01: ' + this.Panel.FeatureCommandRequestPointsInAreaCF01 );
+      this.log.debug('Command 0x3C - RequestPointText_CF01: ' + this.Panel.FeatureCommandRequestPointTextCF01 );
+      this.log.debug('Command 0x3C - RequestPointText_CF03: ' + this.Panel.FeatureCommandRequestPointTextCF03 );
+      this.log.debug('Command 0x5F - SetSubscription_CF01: ' + this.Panel.FeatureCommandSetSubscriptionCF01 );
+      this.log.debug('Command 0x5F - SetSubscription_CF02: ' + this.Panel.FeatureCommandSetSubscriptionCF02 );
+      this.log.debug('Command 0x5F - SetSubscription_CF03: ' + this.Panel.FeatureCommandSetSubscriptionCF03 );
+      this.log.debug('Command 0x5F - SetSubscription_CF04: ' + this.Panel.FeatureCommandSetSubscriptionCF04 );
+      this.log.debug('Command 0x5F - SetSubscription_CF05: ' + this.Panel.FeatureCommandSetSubscriptionCF05 );
+    }
 
     for (const AreaNumber in this.Panel.GetAreas()){
       const Area = this.Panel.GetAreas()[AreaNumber];
@@ -569,4 +536,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     }
   }
 
+  private AdvanceLog(Log:boolean, Message:string){
+    if(Log){
+      this.log.info(Message);
+    } else{
+      this.log.debug(Message);
+    }
+  }
 }

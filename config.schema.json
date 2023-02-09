@@ -17,13 +17,13 @@
         "default" : 7700
       },
       "Passcode":{
-        "title":"Automation Passcode",
+        "title":"Passcode",
         "type": "string",
         "required": true,
         "default": ""
       },
       "ForceLegacyMode":{
-        "title":"Force Legacy Mode",
+        "title":"Legacy Mode",
         "type": "boolean",
         "required": true,
         "default": false
@@ -184,7 +184,7 @@
       "items":[
         {
           "type": "help",
-          "helpvalue": "<em class='primary-text'>Please read </em> <a href='https://github.com/EHylands/homebridge-boschcontrolpanel_bgseries#bosch-control-panel-configuration'> Bosch Control Panel Configuration</a> <em class='primary-text'>to configure your Bosch Control Panel for Homebridge operation </em>"
+          "helpvalue": "<em class='primary-text'>Please read </em> <a href='https://github.com/EHylands/homebridge-boschcontrolpanel_bgseries#bosch-control-panel-configuration'> Bosch Control Panel Configuration</a> <em class='primary-text'>to configure your panel for Homebridge operation </em>"
         },
         {
           "type": "flex",
