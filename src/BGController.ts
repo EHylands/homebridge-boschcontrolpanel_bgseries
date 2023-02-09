@@ -478,8 +478,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
               this.emit('ControllerError', BGControllerError.BoschPanelError, 'Mode2ReqAlarmAreasByPriority_CF01: '
               + BGNegativeAcknowledgement[Data[2]]);
 
-              console.log(Data);
-
             } else{
               this.emit('ControllerError', BGControllerError.UndefinedError, 'Mode2ReqAlarmAreasByPriority_CF01: ' + Data);
             }
@@ -2032,9 +2030,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       const Command = new Uint8Array([0x22]);
       const CommandFormat = new Uint8Array([]);
       const Data = new Uint8Array([AlarmPriority]);
-
-      console.log('Sending Mode2ReqAlarmAreasByPriority_CF01: ' + AlarmPriority);
-
       this.QueueProtocolCommand_0x01(this.FormatCommand(Protocol, Command, CommandFormat, Data));
     }
 
