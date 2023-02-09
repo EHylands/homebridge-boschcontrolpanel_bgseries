@@ -4,7 +4,7 @@
 [![npm downloads](https://badgen.net/npm/dt/homebridge-boschcontrolpanel_bgseries)](https://www.npmjs.com/package/homebridge-boschcontrolpanel_bgseries)
 
 
-This Homebridge plugin allows interactions with your Bosch Control Panel
+This Homebridge plugin allows interactions with your Bosch Control Panel supporting Mode 2 integration.
 
 * Set Panel Area arming mode (Arm, Disarm, Part on instant, Part on delay)
 * Set Panel Outputs state (On, Off)
@@ -60,10 +60,10 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 
 ## Operation
 ### Legacy Mode:
-In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
+Whit this option enabled, the plugin will only use first generation protocol to exchange data with the panel.
 * Expect longer plugin start time 
 * Plugin will pool the panel rather then use push notifications (subscriptions)
-* Any event occuring for a very short amount of time on the panel may not be detected by the plugin in this mode (Sensor only trigering for 1 second, Output automaticaly changing state after 1 second)
+* Any event occuring for a very short amount of time on the panel may not be detected by the plugin in this mode (Sensor only triggering for 1 second, Output automaticaly changing state after 1 second)
 
 ### Security System Accessory:
 The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 
