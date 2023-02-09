@@ -2272,6 +2272,5 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       } else{
         this.FirmwareVersion.Revision = (Data[3] << 8) + Data[4];
       }
-
     }
 }
