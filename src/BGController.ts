@@ -137,6 +137,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     FeatureCommandSetSubscriptionCF05 = false;
     FeatureCommandReqAlarmAreasByPriorityCF01 = false;
     FeatureCommandReqAlarmMemorySummaryCF01 = false;
+    FeatureCommandReqAlarmMemoryDetailCF01 = false;
 
     constructor(Host: string, Port:number, UserType: BGUserType, Passcode: string, ForceLegacyMode:boolean) {
       super();
@@ -1184,6 +1185,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.FeatureCommandSetSubscriptionCF04 = (BitMask[29] & 0x01) !== 0;
       this.FeatureCommandReqAlarmAreasByPriorityCF01 = (BitMask[5] & 0x01) !== 0;
       this.FeatureCommandReqAlarmMemorySummaryCF01 = (BitMask[2] & 0x20) !== 0;
+      this.FeatureCommandReqAlarmMemoryDetailCF01 =(BitMask[6] & 0x40) !== 0;
     }
 
     // Function SendMode2ReqAreaText_CF01
@@ -1982,9 +1984,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     //
     private ReadMode2ReqAlarmMemorySummary_CF01(Data:Buffer){
 
-      console.log('Alarm Memory Summary:');
-      console.log(Data.slice(2, Data.length));
-
       Data = Data.slice(2, Data.length);
       let AlarmDetected = false;
       this.LowestAlarmPriority = -1;
@@ -2005,7 +2004,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         } else{
           AlarmDetected = true;
           this.LowestAlarmPriority = AlarmPriority;
-          this.SendMode2ReqAlarmAreasByPriority_CF01(AlarmPriority);
+          this.SendMode2ReqAlarmMemoryDetail_CF01(AlarmPriority, 0, 0);
         }
       }
 
@@ -2046,10 +2045,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     private ReadMode2ReqAlarmAreasByPriority_CF01(Data:Buffer, AlarmPriority:number){
       Data = Data.slice(2, Data.length);
       let AreaAlarm = false;
-
-      console.log('Reading Mode2ReqAlarmAreasByPriority_CF01');
-      console.log('Alarm Priority: ' + AlarmPriority);
-      console.log(Data);
 
       for(const AreaNumber in this.Areas){
         const Area = this.Areas[AreaNumber];
@@ -2153,17 +2148,18 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
         }
 
         const Area = this.Areas[AreaNumber];
-        if(Area.AddAlarm(AlarmPriority)){
-          this.emit('AreaAlarmStateChange', Area);
+        if(Area !== undefined){
+          if(Area.AddAlarm(AlarmPriority)){
+            this.emit('AreaAlarmStateChange', Area);
+          }
         }
       }
 
-      if(AlarmPriority === 1){
+      if(AlarmPriority === this.LowestAlarmPriority){
         setTimeout(() => {
           this.PoolPanel();
         }, this.PoolInterval);
       }
-
     }
 
     // Function SendMode2ReqOutputStatus()

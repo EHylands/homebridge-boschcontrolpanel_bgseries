@@ -498,6 +498,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.log.debug('Command 0x01 - WhatAreYou_CF07: ' + this.Panel.FeatureCommandWhatAreYouCF07);
       this.log.debug('Command 0x08 - ReqAlarmMemorySummary_CF01: ' + this.Panel.FeatureCommandReqAlarmMemorySummaryCF01);
       this.log.debug('Command 0x22 - ReqAlarmAreasByPriority_CF01: ' + this.Panel.FeatureCommandReqAlarmAreasByPriorityCF01);
+      this.log.debug('Command 0x23 - ReqAlarmMemoryDetail_CF01: ' + this.Panel.FeatureCommandReqAlarmMemoryDetailCF01 );
       this.log.debug('Command 0x24 - RequestConfiguredArea_CF01: ' + this.Panel.FeatureCommandRequestConfiguredAreaCF01 );
       this.log.debug('Command 0x27 - ArmPanelAreas_CF01: ' + this.Panel.FeatureCommandArmPanelAreasCF01 );
       this.log.debug('Command 0x29 - RequestAreaText_CF01: ' + this.Panel.FeatureCommandRequestAreaTextCF01 );

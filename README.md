@@ -62,7 +62,8 @@ If selected, Contact Sensors will be added in Home App and report panel wide Fir
 ### Legacy Mode:
 In this configuration, the plugin will only use first generation protocol to exchange data with the panel.
 * Expect longer plugin start time 
-* Plugin will pool the panel rather then use push notifications (subscriptions). 
+* Plugin will pool the panel rather then use push notifications (subscriptions)
+* Any event occuring for a very short amount of time on the panel may not be detected by the plugin in this mode (Sensor only trigering for 1 second, Output automaticaly changing state after 1 second)
 
 ### Security System Accessory:
 The following conversions are applied between Homekit Area Arming state and Bosch Control Panel Area Arming state: 
