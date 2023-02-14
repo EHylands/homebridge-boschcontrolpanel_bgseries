@@ -159,6 +159,9 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       this.InitialRun = true;
       this.EventDataLength = 0;
 
+      this.ProtocolCommandQueue_0x01 = [];
+      this.WaitingProtocolResponse_0x01 = false;
+
       const options = {
         rejectUnauthorized: false,
         //ca: [BoschCertificate20202030],
