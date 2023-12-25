@@ -381,7 +381,6 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     async ArmArea(AreaToArm: number[], ArmingType: BGArmingType){
       this.semaphore.use(async () => {
         await this.Protocol01.Mode2ArmPanelAreas(AreaToArm, ArmingType);
-        console.log('ARM');
         return;
       });
     }
