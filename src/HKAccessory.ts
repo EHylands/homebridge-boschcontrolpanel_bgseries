@@ -1,4 +1,4 @@
-import { PlatformAccessory, Service, WithUUID } from 'homebridge';
+import { PlatformAccessory } from 'homebridge';
 import { BGPanelType } from './BGConst';
 import { HB_BoschControlPanel_BGSeries } from './platform';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
