@@ -4,7 +4,7 @@ import { HB_BoschControlPanel_BGSeries } from './platform';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 export abstract class HKAccessory {
-    public readonly Accessory: PlatformAccessory;
+    public Accessory: PlatformAccessory;
 
     constructor(
         protected readonly platform: HB_BoschControlPanel_BGSeries,
@@ -30,8 +30,8 @@ export abstract class HKAccessory {
         .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.platform.Panel.FirmwareVersion.toSring());
     }
 
-    protected useService(type: WithUUID<typeof Service>): Service {
-      const service = this.Accessory.getService(type);
-      return service || this.Accessory.addService(type);
-    }
+  //protected useService(type: WithUUID<typeof Service>): Service {
+  //  const service = this.Accessory.getService(type);
+  //  return service || this.Accessory.addService()
+  //}
 }

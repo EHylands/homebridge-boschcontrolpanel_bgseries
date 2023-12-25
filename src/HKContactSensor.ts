@@ -4,6 +4,7 @@ import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class HKContactSensor extends HKSensor {
+  private service: Service;
 
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,
@@ -11,10 +12,8 @@ export class HKContactSensor extends HKSensor {
   ) {
 
     super(platform, PointNumber, BGSensorType.ContactSensor);
-  }
-
-  GetService():Service{
-    return this.useService(this.platform.Service.ContactSensor);
+    this.service = this.Accessory.getService(this.platform.Service.ContactSensor)
+    || this.Accessory.addService(this.platform.Service.ContactSensor);
   }
 
   HandleEventDetected(PointStatus: BGPointStatus){
@@ -22,10 +21,10 @@ export class HKContactSensor extends HKSensor {
     const ContactDetected = PointStatus === BGPointStatus.Normal;
 
     if(ContactDetected){
-      this.GetService().getCharacteristic(this.platform.Characteristic.ContactSensorState)
+      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
     } else{
-      this.GetService().getCharacteristic(this.platform.Characteristic.ContactSensorState)
+      this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
         .updateValue(this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
     }
   }
