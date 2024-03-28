@@ -38,4 +38,8 @@ export class BGPoint{
       this.PointCode = PointCode;
       this.PointCondition = PointCondition;
     }
+
+    UpdatePointShort(PointStatus: BGPointStatus){
+      this.PointStatus = PointStatus;
+    }
 }

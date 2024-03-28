@@ -14,8 +14,9 @@ import tls = require('tls');
 import net = require('net');
 
 export enum BGControllerError{
-  InvalidProtocolLength = 'Invalid Protocol Length',
+
   InvalidProtocol = 'Invalid Protocol',
+  InvalidProtocolLength = 'Invalid Protocol Length',
   InvalidProtocolVersion = 'Invalid Protocol Version',
   InvalidCommandLength = 'Invalid Command Length',
   InvalidCommandFormatLength = 'Invalid Command Format Length',
@@ -69,9 +70,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     MaxPassCodeLength = 24;
 
     // Bosch Protocol related variables
-    //readonly BoschMaxAreas = 128;
-    //readonly BoschMaxPointInArea = 600;
-    readonly BoschMaxOutput = 600;
+    readonly BoschMaxAreas = 128;
+    readonly BoschMaxPoints = 600;
+    readonly BoschMaxOutputs = 600;
+
+
     readonly BoschMaxNotificationMessageBytes = 480;
 
     // Current Panel related variables
@@ -311,8 +314,16 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
       // Enable subscriptions if available on panel
       if(this.FeatureProtocol02){
-        await this.Protocol01.Mode2SetSubscriptions_CF03();
-        return;
+
+        if(this.FeatureCommandSetSubscriptionCF03 === true){
+          await this.Protocol01.Mode2SetSubscriptions_CF03();
+          return;
+        }
+
+        if(this.FeatureCommandSetSubscriptionCF01 === true){
+          await this.Protocol01.Mode2SetSubscriptions_CF01();
+          return;
+        }
       }
 
       // Default to Pooling Panel

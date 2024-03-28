@@ -867,9 +867,9 @@ export class BGProtocolHandler01 {
       const BitMaskArray = new Uint8Array([0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]);
       const ConfiguredOutputMaskArray = Res!.slice(3, Res!.length);
 
-      if(ConfiguredOutputMaskArray.length * 8 > this.Controller.BoschMaxOutput){
+      if(ConfiguredOutputMaskArray.length * 8 > this.Controller.BoschMaxOutputs){
         this.Controller.emit('ControllerError', BGControllerError.MaxOutputNumberError,
-          'This controller ony support ' + this.Controller.BoschMaxOutput + ' outputs');
+          'This controller ony support ' + this.Controller.BoschMaxOutputs + ' outputs');
         return false;
       }
 
@@ -1456,6 +1456,55 @@ export class BGProtocolHandler01 {
         return false;
       }
 
+      return true;
+    }
+
+    // Function Mode2SetSubscriptions_CF01()
+    // This command requests a list of subscriptions to asynchronous panel status messages
+    // Supported in Protocol Version 5.0
+    // Command Format 1
+    //
+    async Mode2SetSubscriptions_CF01():Promise<boolean>{
+
+      // Check min supported version
+      const MinVersion = new BGProtocolVersion(5, 0, 0);
+      if(!this.Controller.PanelIIPVersion.GTE(MinVersion)){
+        this.Controller.emit('ControllerError', BGControllerError.InvalidProtocolVersion,
+          'Mode2SetSubscriptions_CF01, Expecting IIP version >= ' + MinVersion.toSring());
+      }
+
+      const Protocol = new Uint8Array([0x01]);
+      const Command = new Uint8Array([0x5F]);
+      const CommandFormat = new Uint8Array([0x01]);
+
+      const ConfidenceMsg = new Uint8Array([0x01]);
+      const EventMem = new Uint8Array([0x01]);
+      const EventLog = new Uint8Array([0x00]);
+      const ConfigChange = new Uint8Array([0x00]);
+      const AreaOnOff = new Uint8Array([0x01]);
+      const AreaReady = new Uint8Array([0x01]);
+      const OutputState = new Uint8Array([0x01]);
+      const PointState = new Uint8Array([0x01]);
+      const DoorState = new Uint8Array([0x00]);
+      const WalkTestType = new Uint8Array([0x00]);
+
+      const Data = new Uint8Array([ConfidenceMsg[0], EventMem[0], EventLog[0],
+        ConfigChange[0], AreaOnOff[0], AreaReady[0], OutputState[0], PointState[0], DoorState[0], WalkTestType[0]]);
+
+      const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
+      this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
+
+      if(!this.ValidateResponse(Res!, 0xFC, 'Mode2SetSubscriptions_CF01')){
+        return false;
+      }
+
+      this.Controller.PanelReceivingNotifcation = true;
+      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 

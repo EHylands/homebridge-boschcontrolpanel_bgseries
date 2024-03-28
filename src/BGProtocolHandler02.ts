@@ -90,7 +90,7 @@ export class BGProtocolHandler02 {
           // Output state
           if(StatusItemType === 6){
 
-            // Solution panels not reporting proper outputs numbers in
+            // Solution panels does not reports proper outputs numbers in
             // notifications.
             // Resort to pooling panel for outputs changes
             if(this.Controller.PanelType === BGPanelType.Solution2000 ||
@@ -109,6 +109,19 @@ export class BGProtocolHandler02 {
             if(Output !== undefined){
               Output.OutputState = OutputPatern !== 0;
               this.Controller.emit('OutputStateChange', Output);
+            }
+            continue;
+          }
+
+          // Read point status notification
+          if(StatusItemType === 7){
+            const PointNumber = (Data[++i] << 8) + Data[++i];
+            const PointState = Data[++i];
+
+            const Point = this.Controller.Points[PointNumber];
+            if(Point !== undefined){
+              Point.UpdatePointShort(PointState);
+              this.Controller.emit('PointStatusChange', Point);
             }
             continue;
           }
