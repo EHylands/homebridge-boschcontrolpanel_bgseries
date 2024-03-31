@@ -320,6 +320,11 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
           return;
         }
 
+        if(this.FeatureCommandSetSubscriptionCF02 === true){
+          await this.Protocol01.Mode2SetSubscriptions_CF02();
+          return;
+        }
+
         if(this.FeatureCommandSetSubscriptionCF01 === true){
           await this.Protocol01.Mode2SetSubscriptions_CF01();
           return;
@@ -331,6 +336,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     }
 
     private async PoolPanel(){
+
       if(!await this.Protocol01.Mode2ReqPointsStatus()){
         return;
       }

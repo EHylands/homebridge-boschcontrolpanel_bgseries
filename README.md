@@ -20,7 +20,7 @@ This Homebridge plugin allows interactions with your Bosch Control Panel support
 | [G Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Supported |  |
 | [GV4](https://resources-boschsecurity-cdn.azureedge.net/public/documents/Bosch_G_Series_Quick_Commercial_Brochure_enUS_23390517387.pdf) |Status Pending | Firmware 2.00 and higher |
 | [Solution 2000/3000](https://media.boschsecurity.com/fs/media/pb/images/products/intrusion_alarm/solution_2000___3000/Solution-2000-3000-Brochure-2021.pdf) | Supported | Data pooling for firmware <= 2.1 |
-| [AMAX Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/AMAX_panel_family_Installation_Manual_frFR_15867163019.pdf) | Status Pending| Firmware 4.01 and higher |
+| [AMAX Series](https://resources-boschsecurity-cdn.azureedge.net/public/documents/AMAX_panel_family_Installation_Manual_frFR_15867163019.pdf) | Not Supported| Firmware 4.01 and higher |
 
 
 ## Bosch Control Panel Configuration
