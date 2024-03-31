@@ -32,7 +32,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
   private PanelPort = 14999;
   private PanelPasscode = '';
   private ForceLegacyMode = false;
-  public readonly Panel: BGController;
+  public readonly Panel!: BGController;
 
   private PointsArray:Record<number, HKSensor> = {};
   private OutputsArray:Record<number, HKOutputAccessory> = {};
@@ -49,8 +49,6 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     if(!this.CheckConfigPhase1()){
       log.error('Aborting plugin operation - Failed Config Phase 1 (Host, Port or Passcode error)');
-      this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser,
-        this.PanelPasscode, false);
       return;
     }
 
@@ -58,7 +56,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.ForceLegacyMode);
 
     this.api.on('didFinishLaunching', () => {
-      this.discoverDevices();
+      this.DiscoverDevices();
     });
   }
 
@@ -113,7 +111,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
         }
 
         // Point in config not found in panel;
-        if(this.Panel.GetPoints()[Point.PointNumber] === undefined ){
+        if(this.Panel.Points[Point.PointNumber] === undefined ){
           this.log.error('Aborting: Point ' + Point.PointNumber + ' in config file is not configured on the panel');
           return false;
         }
@@ -138,7 +136,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           return false;
         }
 
-        if(this.Panel.GetAreas()[Area.AreaNumber] === undefined){
+        if(this.Panel.Areas[Area.AreaNumber] === undefined){
           this.log.error('Aborting: Area ' + Area.AreaNumber + ' in config file is not configured on the panel');
           return false;
         }
@@ -159,7 +157,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           for(let i = 0 ; i < ScopeStringArray.length ; i ++){
 
             // check for valid numeric area number
-            if(this.Panel.GetAreas()[ScopeStringArray[i]] === undefined){
+            if(this.Panel.Areas[ScopeStringArray[i]] === undefined){
               this.log.error('Aborting: Area' + Area.AreaNumber +', Area Scope Error in config file (invalid Area argument: \''
               + ScopeStringArray[i] +'\'');
               return false;
@@ -188,7 +186,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
           return false;
         }
 
-        if(this.Panel.GetOutputs()[Output.OutputNumber] === undefined){
+        if(this.Panel.Outputs[Output.OutputNumber] === undefined){
           this.log.error('Aborting: Output' + Output.OutputNumber + ' in config file is not configured on the panel');
           return false;
         }
@@ -314,12 +312,11 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     }
   }
 
-  discoverDevices() {
+  DiscoverDevices() {
 
     this.log.info('Configuring Panel, this may take a few minutes ...');
 
     this.Panel.on('PanelReadyForOperation', () => {
-
       // Phase 2 config file check
       if(!this.CheckConfigPhase2()){
         this.log.error('Aborting plugin operation - Failed Config Phase 2');
@@ -449,6 +446,7 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
     this.Panel.Connect();
   }
 
+
   private CreateMasterAlarm(MonitoringEvent:string, MonitoringArea:number){
     const uuid = this.api.hap.uuid.generate('BGMasterAlarm' + this.Panel.PanelType + MonitoringEvent + MonitoringArea);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
@@ -490,12 +488,12 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.log.debug('Packet(512 Bytes): ' + this.Panel.Feature512BytesPacket);
       this.log.debug('Packet(1460 Bytes): ' + this.Panel.Feature1460BytesPacket);
       this.log.debug('Command 0x01 - WhatAreYou_CF01: ' + this.Panel.FeatureCommandWhatAreYouCF01);
-      this.log.debug('Command 0x01 - WhatAreYou_CF02: ' + this.Panel.FeatureCommandWhatAreYouCF02);
+      //this.log.debug('Command 0x01 - WhatAreYou_CF02: ' + this.Panel.FeatureCommandWhatAreYouCF02);
       this.log.debug('Command 0x01 - WhatAreYou_CF03: ' + this.Panel.FeatureCommandWhatAreYouCF03 );
-      this.log.debug('Command 0x01 - WhatAreYou_CF04: ' + this.Panel.FeatureCommandWhatAreYouCF04);
-      this.log.debug('Command 0x01 - WhatAreYou_CF05: ' + this.Panel.FeatureCommandWhatAreYouCF05);
-      this.log.debug('Command 0x01 - WhatAreYou_CF06: ' + this.Panel.FeatureCommandWhatAreYouCF06);
-      this.log.debug('Command 0x01 - WhatAreYou_CF07: ' + this.Panel.FeatureCommandWhatAreYouCF07);
+      //this.log.debug('Command 0x01 - WhatAreYou_CF04: ' + this.Panel.FeatureCommandWhatAreYouCF04);
+      //this.log.debug('Command 0x01 - WhatAreYou_CF05: ' + this.Panel.FeatureCommandWhatAreYouCF05);
+      //this.log.debug('Command 0x01 - WhatAreYou_CF06: ' + this.Panel.FeatureCommandWhatAreYouCF06);
+      //this.log.debug('Command 0x01 - WhatAreYou_CF07: ' + this.Panel.FeatureCommandWhatAreYouCF07);
       this.log.debug('Command 0x08 - ReqAlarmMemorySummary_CF01: ' + this.Panel.FeatureCommandReqAlarmMemorySummaryCF01);
       this.log.debug('Command 0x22 - ReqAlarmAreasByPriority_CF01: ' + this.Panel.FeatureCommandReqAlarmAreasByPriorityCF01);
       this.log.debug('Command 0x23 - ReqAlarmMemoryDetail_CF01: ' + this.Panel.FeatureCommandReqAlarmMemoryDetailCF01 );
@@ -518,20 +516,20 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
       this.log.debug('Command 0x5F - SetSubscription_CF05: ' + this.Panel.FeatureCommandSetSubscriptionCF05 );
     }
 
-    for (const AreaNumber in this.Panel.GetAreas()){
-      const Area = this.Panel.GetAreas()[AreaNumber];
+    for (const AreaNumber in this.Panel.Areas){
+      const Area = this.Panel.Areas[AreaNumber];
       this.log.info('Area' + Area.AreaNumber + ': ' + Area.AreaText);
 
-      for(const PointNumber in this.Panel.GetPoints()){
-        const Point = this.Panel.GetPoints()[PointNumber];
+      for(const PointNumber in this.Panel.Points){
+        const Point = this.Panel.Points[PointNumber];
         if(Point.AreaNumber === Area.AreaNumber){
           this.log.info('  Point' + Point.PointNumber + ': ' + Point.PointText);
         }
       }
     }
 
-    for (const OutputNumber in this.Panel.GetOutputs()){
-      const Output = this.Panel.GetOutputs()[OutputNumber];
+    for (const OutputNumber in this.Panel.Outputs){
+      const Output = this.Panel.Outputs[OutputNumber];
       this.log.info('Output' + Output.OutputNumber + ': ' + Output.OutputText);
     }
   }

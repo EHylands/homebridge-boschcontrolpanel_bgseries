@@ -1,8 +1,10 @@
 import { BGAreaStatus, BGArmingType, BGPanelType } from './BGConst';
 import { HKAccessory } from './HKAccessory';
 import { HB_BoschControlPanel_BGSeries } from './platform';
+import { Service } from 'homebridge';
 
 export class HKSecurityPanel extends HKAccessory {
+  private service: Service;
 
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,
@@ -14,9 +16,12 @@ export class HKSecurityPanel extends HKAccessory {
     super(
       platform,
       'BGArea' + platform.Panel.PanelType + AreaMonitored, // UUID, do not change
-      platform.Panel.GetAreas()[AreaMonitored].AreaText,
+      platform.Panel.Areas[AreaMonitored].AreaText,
       'BGPanel' + AreaMonitored,
     );
+
+    this.service = this.Accessory.getService(this.platform.Service.SecuritySystem)
+    || this.Accessory.addService(this.platform.Service.SecuritySystem);
 
     if(AreaInScope.indexOf(AreaMonitored) === -1){
       this.AreaInScope.push(this.AreaMonitored);
@@ -27,7 +32,7 @@ export class HKSecurityPanel extends HKAccessory {
     this.platform.log.debug('    Area(s) in Scope: ' + this.GetAreaInScopeString());
     this.platform.log.debug('    Passcode Follows Scope: ' + this.PasscodeFollowScope);
 
-    this.useService(this.platform.Service.SecuritySystem).getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
+    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
       .onSet(this.handleSecuritySystemTargetStateSet.bind(this));
 
     this.platform.Panel.on('AreaOnOffStateChange', (Area)=>{
@@ -43,7 +48,7 @@ export class HKSecurityPanel extends HKAccessory {
 
       let AlarmDetected = false;
       for(let i = 0 ; i < this.AreaInScope.length ; i ++){
-        if(this.platform.Panel.GetAreas()[this.AreaInScope[i]].GetAlarmDetected()){
+        if(this.platform.Panel.Areas[this.AreaInScope[i]].GetAlarmDetected()){
           AlarmDetected = true;
           break;
         }
@@ -56,23 +61,20 @@ export class HKSecurityPanel extends HKAccessory {
   UpdateStateFromPanel(AreaStatus: BGAreaStatus) {
     const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(AreaStatus);
     const HKTargetStatus = this.BoschAreaStatusToTargetHomekitSecurityStatus(AreaStatus);
-    this.useService(this.platform.Service.SecuritySystem)
-      .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
-    this.useService(this.platform.Service.SecuritySystem)
-      .getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
+    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+    this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
   }
 
   SetAlarmTriggered(AlarmTrigerred){
     if(AlarmTrigerred){
-      this.useService(this.platform.Service.SecuritySystem).updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
+      this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
         this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
     } else{
 
-      const Area = this.platform.Panel.GetAreas()[this.AreaMonitored];
+      const Area = this.platform.Panel.Areas[this.AreaMonitored];
       if(Area){
         const HKCurrentStatus = this.BoschAreaStatusToCurrentHomekitSecurityStatus(Area.AreaStatus);
-        this.useService(this.platform.Service.SecuritySystem)
-          .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
+        this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState).updateValue(HKCurrentStatus);
       } else{
         this.platform.log.error('Security System: Error reading Area Status');
       }
@@ -95,7 +97,7 @@ export class HKSecurityPanel extends HKAccessory {
 
     switch(value){
       case this.platform.Characteristic.SecuritySystemTargetState.DISARM:{
-        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.Disarm);
+        this.platform.Panel.ArmArea(AreaToArm, BGArmingType.Disarm);
         break;
       }
 
@@ -106,9 +108,9 @@ export class HKSecurityPanel extends HKAccessory {
            Panel.PanelType === BGPanelType.AMAX2100 ||
            Panel.PanelType === BGPanelType.AMAX3000 ||
            Panel.PanelType === BGPanelType.AMAX4000){
-          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.AwayArm);
+          this.platform.Panel.ArmArea(AreaToArm, BGArmingType.AwayArm);
         } else{
-          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.MasterDelayArm);
+          this.platform.Panel.ArmArea(AreaToArm, BGArmingType.MasterDelayArm);
         }
 
         break;
@@ -120,18 +122,18 @@ export class HKSecurityPanel extends HKAccessory {
           Panel.PanelType === BGPanelType.AMAX2100 ||
           Panel.PanelType === BGPanelType.AMAX3000 ||
           Panel.PanelType === BGPanelType.AMAX4000){
-          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          this.platform.Panel.ArmArea(AreaToArm, BGArmingType.StayArm1);
           break;
         }
 
         if(Panel.PanelType === BGPanelType.Solution2000 ||
           Panel.PanelType === BGPanelType.Solution3000){
-          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm2);
+          this.platform.Panel.ArmArea(AreaToArm, BGArmingType.StayArm2);
           break;
 
         }
 
-        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterInstantArm);
+        this.platform.Panel.ArmArea(AreaToArm, BGArmingType.PerimeterInstantArm);
         break;
       }
 
@@ -142,11 +144,11 @@ export class HKSecurityPanel extends HKAccessory {
           Panel.PanelType === BGPanelType.AMAX2100 ||
           Panel.PanelType === BGPanelType.AMAX3000 ||
           Panel.PanelType === BGPanelType.AMAX4000){
-          this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.StayArm1);
+          this.platform.Panel.ArmArea(AreaToArm, BGArmingType.StayArm1);
           break;
         }
 
-        this.platform.Panel.SendMode2ArmPanelAreas(AreaToArm, BGArmingType.PerimeterDelayArm);
+        this.platform.Panel.ArmArea(AreaToArm, BGArmingType.PerimeterDelayArm);
         break;
       }
     }

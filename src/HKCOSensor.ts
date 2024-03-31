@@ -4,6 +4,7 @@ import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class HKCOSensor extends HKSensor {
+  private service: Service;
 
   constructor(
     protected readonly platform:HB_BoschControlPanel_BGSeries,
@@ -11,15 +12,13 @@ export class HKCOSensor extends HKSensor {
   ) {
 
     super(platform, PointNumber, BGSensorType.COSensor);
-  }
-
-  GetService():Service{
-    return this.useService(this.platform.Service.CarbonMonoxideSensor);
+    this.service = this.Accessory.getService(this.platform.Service.CarbonMonoxideSensor)
+    || this.Accessory.addService(this.platform.Service.CarbonMonoxideSensor);
   }
 
   HandleEventDetected(PointStatus: BGPointStatus){
 
     const CODetected = PointStatus !== BGPointStatus.Normal;
-    this.GetService().updateCharacteristic(this.platform.Characteristic.CarbonMonoxideDetected, CODetected );
+    this.service.updateCharacteristic(this.platform.Characteristic.CarbonMonoxideDetected, CODetected );
   }
 }

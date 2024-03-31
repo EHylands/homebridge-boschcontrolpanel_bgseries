@@ -4,6 +4,7 @@ import { BGPointStatus} from './BGPoint';
 import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
 
 export class HKMotionSensor extends HKSensor {
+  private service: Service;
 
   constructor(
     protected readonly platform: HB_BoschControlPanel_BGSeries,
@@ -11,14 +12,13 @@ export class HKMotionSensor extends HKSensor {
   ) {
 
     super(platform, PointNumber, BGSensorType.MotionSensor);
-  }
 
-  GetService():Service{
-    return this.useService(this.platform.Service.MotionSensor);
+    this.service = this.Accessory.getService(this.platform.Service.MotionSensor)
+    || this.Accessory.addService(this.platform.Service.MotionSensor);
   }
 
   HandleEventDetected(PointStatus: BGPointStatus){
     const MotionDetected = PointStatus !== BGPointStatus.Normal;
-    this.GetService().updateCharacteristic(this.platform.Characteristic.MotionDetected, MotionDetected );
+    this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, MotionDetected );
   }
 }
