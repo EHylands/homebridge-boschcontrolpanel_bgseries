@@ -5,8 +5,6 @@ import { BGPanelType } from './BGConst';
 export class BGProtocolHandler02 {
 
     private Controller:BGController;
-    private ProtocolId = 0x02;
-    private MaxPacketSize = 480;
 
     constructor(Controller:BGController){
       this.Controller = Controller;
@@ -57,10 +55,13 @@ export class BGProtocolHandler02 {
           if(StatusItemType === 4){
             const AreaNumber = (Data[++i] << 8) + Data[++i];
             const AreaStatus = Data[++i];
+
             const Area = this.Controller.Areas[AreaNumber];
-            Area.SetAreaStatus(AreaStatus);
-            this.Controller.emit('AreaOnOffStateChange', Area);
-            continue;
+            if(Area !== undefined){
+              Area.SetAreaStatus(AreaStatus);
+              this.Controller.emit('AreaOnOffStateChange', Area);
+              continue;
+            }
           }
 
           // Area ready state
@@ -70,25 +71,29 @@ export class BGProtocolHandler02 {
             const Fault = (Data[++i] << 8) + Data[++i];
 
             const Area = this.Controller.Areas[AreaNumber];
-            if(AreaReadyState === 0){
-              Area.SetAreaReadyState(false, false, Fault);
+
+            if(Area !== undefined){
+              if(AreaReadyState === 0){
+                Area.SetAreaReadyState(false, false, Fault);
+              }
+
+              if(AreaReadyState === 1){
+                Area.SetAreaReadyState(false, true, Fault);
+              }
+
+              if(AreaReadyState === 2){
+                Area.SetAreaReadyState(true, true, Fault);
+              }
+
+              this.Controller.emit('AreaReadyStateChange', Area);
+              continue;
             }
-
-            if(AreaReadyState === 1){
-              Area.SetAreaReadyState(false, true, Fault);
-            }
-
-            if(AreaReadyState === 2){
-              Area.SetAreaReadyState(true, true, Fault);
-            }
-
-            this.Controller.emit('AreaReadyStateChange', Area);
-
-            continue;
           }
 
           // Output state
           if(StatusItemType === 6){
+            const OutputNumber = (Data[++i] << 8) + Data[++i];
+            const OutputPatern = Data[++i];
 
             // Solution panels does not reports proper outputs numbers in
             // notifications.
@@ -99,16 +104,13 @@ export class BGProtocolHandler02 {
               this.Controller.PanelType === BGPanelType.AMAX3000 ||
               this.Controller.PanelType === BGPanelType.AMAX4000
             ){
-              this.Controller.Protocol01.Mode2ReqOutputStatus();
-              continue;
-            }
-
-            const OutputNumber = (Data[++i] << 8) + Data[++i];
-            const OutputPatern = Data[++i];
-            const Output = this.Controller.Outputs[OutputNumber];
-            if(Output !== undefined){
-              Output.OutputState = OutputPatern !== 0;
-              this.Controller.emit('OutputStateChange', Output);
+              await this.Controller.Protocol01.Mode2ReqOutputStatus();
+            } else{
+              const Output = this.Controller.Outputs[OutputNumber];
+              if(Output !== undefined){
+                Output.OutputState = OutputPatern !== 0;
+                this.Controller.emit('OutputStateChange', Output);
+              }
             }
             continue;
           }
@@ -147,6 +149,7 @@ export class BGProtocolHandler02 {
             const PointCode = Data[++i];
             const Condition = (Data[++i] << 16) + (Data[++i] << 8) + Data[++i];
             const Point = this.Controller.Points[PointNumber];
+
             if(Point !== undefined){
               Point.UpdatePoint(PointStatus, (Bypassable !== 0), PointCode, Condition);
               this.Controller.emit('PointStatusChange', Point);

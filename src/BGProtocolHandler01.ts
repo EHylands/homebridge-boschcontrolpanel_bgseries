@@ -308,7 +308,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      let Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAlarmMemorySummary_CF01')){
         return false;
@@ -363,6 +367,7 @@ export class BGProtocolHandler01 {
       do{
         Res = await this.Controller.PromiseS.read();
       } while(Res![0] !== this.ProtocolId);
+
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqPanelCapacitie')){
         return false;
       }
@@ -438,7 +443,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      let Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAlarmAreasByPriority_CF01')){
         return false;
@@ -502,7 +511,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      let Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAlarmMemoryDetail_CF01')){
         return false;
@@ -652,7 +665,11 @@ export class BGProtocolHandler01 {
 
         const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
         this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-        let Res = await this.Controller.PromiseS.read();
+
+        let Res: string | Buffer | undefined;
+        do{
+          Res = await this.Controller.PromiseS.read();
+        } while(Res![0] !== this.ProtocolId);
 
         if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAreaStatus_CF01')){
           return false;
@@ -710,7 +727,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      const Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFC, 'Mode2ArmPanelAreas')){
         return false;
@@ -744,7 +765,11 @@ export class BGProtocolHandler01 {
 
         const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
         this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-        const Res = await this.Controller.PromiseS.read();
+
+        let Res: string | Buffer | undefined;
+        do{
+          Res = await this.Controller.PromiseS.read();
+        } while(Res![0] !== this.ProtocolId);
 
         if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAreaText_CF01')){
           return false;
@@ -795,6 +820,7 @@ export class BGProtocolHandler01 {
       do{
         Res = await this.Controller.PromiseS.read();
       } while(Res![0] !== this.ProtocolId);
+
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAreaText_CF03')){
         return false;
       }
@@ -906,7 +932,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      let Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqOutputStatus')){
         return false;
@@ -965,7 +995,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      const Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFC, 'Mode2SetOutputState_CF01')){
         return false;
@@ -1038,7 +1072,11 @@ export class BGProtocolHandler01 {
 
         const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
         this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-        const Res = await this.Controller.PromiseS.read();
+
+        let Res: string | Buffer | undefined;
+        do{
+          Res = await this.Controller.PromiseS.read();
+        } while(Res![0] !== this.ProtocolId);
 
         if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqOutputText_CF01')){
           return false;
@@ -1211,7 +1249,11 @@ export class BGProtocolHandler01 {
         if((Data.length) / 2 >= MaxPair){
           const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
           this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-          let Res = await this.Controller.PromiseS.read();
+
+          let Res: string | Buffer | undefined;
+          do{
+            Res = await this.Controller.PromiseS.read();
+          } while(Res![0] !== this.ProtocolId);
 
           if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqPointsStatus')){
             return false;
@@ -1225,7 +1267,6 @@ export class BGProtocolHandler01 {
             const Low = Number(Res[(i*3)+1]);
             const NewStatus = Number(Res[(i*3)+2]);
             const PointNumber = (High << 8) + Low;
-
 
             const Point = this.Controller.Points[PointNumber];
             if(Point !== undefined){
@@ -1242,7 +1283,11 @@ export class BGProtocolHandler01 {
       if(Data.length > 0){
         const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
         this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-        let Res = await this.Controller.PromiseS.read();
+
+        let Res: string | Buffer | undefined;
+        do{
+          Res = await this.Controller.PromiseS.read();
+        } while(Res![0] !== this.ProtocolId);
 
         if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqPointsStatus')){
           return false;
@@ -1295,7 +1340,11 @@ export class BGProtocolHandler01 {
 
         const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
         this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-        const Res = await this.Controller.PromiseS.read();
+
+        let Res: string | Buffer | undefined;
+        do{
+          Res = await this.Controller.PromiseS.read();
+        } while(Res![0] !== this.ProtocolId);
 
         if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqPointText_CF01')){
           return false;
@@ -1450,7 +1499,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      const Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2LoginRSCUser')){
         return false;
@@ -1622,7 +1675,11 @@ export class BGProtocolHandler01 {
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, Data);
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
-      const Res = await this.Controller.PromiseS.read();
+
+      let Res: string | Buffer | undefined;
+      do{
+        Res = await this.Controller.PromiseS.read();
+      } while(Res![0] !== this.ProtocolId);
 
       if(!this.ValidateResponse(Res!, 0xFC, 'Mode2TerminateSession')){
         return false;
