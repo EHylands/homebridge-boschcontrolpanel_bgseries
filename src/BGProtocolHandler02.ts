@@ -46,7 +46,7 @@ export class BGProtocolHandler02 {
                 }
               }
             } else{
-              await this.Controller.Protocol01.Mode2ReqAlarmAreasByPriority_CF01(AlarmPriority);
+              await this.Controller.Protocol01.Mode2ReqAlarmMemoryDetail_CF01(AlarmPriority, 0, 0);
             }
             continue;
           }
