@@ -1,5 +1,5 @@
 import { BGController, BGControllerError } from './BGController';
-import { BGPanelType } from './BGConst';
+import { BGAreaStatus, BGPanelType } from './BGConst';
 
 
 export class BGProtocolHandler02 {
@@ -46,7 +46,7 @@ export class BGProtocolHandler02 {
                 }
               }
             } else{
-              await this.Controller.Protocol01.Mode2ReqAlarmAreasByPriority_CF01(AlarmPriority);
+              await this.Controller.GetAlarmMemoryDetail(AlarmPriority, 0, 0);
             }
             continue;
           }
@@ -60,8 +60,8 @@ export class BGProtocolHandler02 {
             if(Area !== undefined){
               Area.SetAreaStatus(AreaStatus);
               this.Controller.emit('AreaOnOffStateChange', Area);
-              continue;
             }
+            continue;
           }
 
           // Area ready state
@@ -86,8 +86,8 @@ export class BGProtocolHandler02 {
               }
 
               this.Controller.emit('AreaReadyStateChange', Area);
-              continue;
             }
+            continue;
           }
 
           // Output state
@@ -102,9 +102,10 @@ export class BGProtocolHandler02 {
               this.Controller.PanelType === BGPanelType.Solution3000 ||
               this.Controller.PanelType === BGPanelType.AMAX2100 ||
               this.Controller.PanelType === BGPanelType.AMAX3000 ||
-              this.Controller.PanelType === BGPanelType.AMAX4000
-            ){
-              await this.Controller.Protocol01.Mode2ReqOutputStatus();
+              this.Controller.PanelType === BGPanelType.AMAX4000 ) {
+
+              await this.Controller.GetOutputState();
+
             } else{
               const Output = this.Controller.Outputs[OutputNumber];
               if(Output !== undefined){

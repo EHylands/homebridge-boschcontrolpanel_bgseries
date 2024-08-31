@@ -520,7 +520,6 @@ export class BGProtocolHandler01 {
       if(!this.ValidateResponse(Res!, 0xFE, 'Mode2ReqAlarmMemoryDetail_CF01')){
         return false;
       }
-
       Res = Res!.slice(3, Res!.length);
 
       // No alarm on panel for that AlarmPriority
@@ -542,7 +541,6 @@ export class BGProtocolHandler01 {
       for(let i = 0 ; i < Chunk ; i ++){
         const Detail = Res.slice(i*ChunkLength, i*ChunkLength + ChunkLength);
         const AreaNumber = (Number(Detail[0]) << 8) + Number(Detail[1]);
-        //const ItemType = Detail[2];
         const ItemPointKeypadUser = (Number(Detail[3]) << 8) + Number(Detail[4]);
 
         // More data to come
@@ -726,6 +724,7 @@ export class BGProtocolHandler01 {
       }
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask);
+
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
 
       let Res: string | Buffer | undefined;
@@ -1556,8 +1555,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 
@@ -1609,8 +1606,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 
@@ -1662,8 +1657,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 

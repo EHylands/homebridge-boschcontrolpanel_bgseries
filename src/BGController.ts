@@ -1,5 +1,5 @@
 import { BGPoint } from './BGPoint';
-import { BGUserType, BGPanelType } from './BGConst';
+import { BGUserType, BGPanelType, BGAlarmPriority } from './BGConst';
 //import { BoschCertificate20202030 } from './BGCertificate';
 import { BGOutput } from './BGOutput';
 import { BGArea } from './BGArea';
@@ -317,16 +317,22 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
 
         if(this.FeatureCommandSetSubscriptionCF03 === true){
           await this.Protocol01.Mode2SetSubscriptions_CF03();
+          this.PanelReceivingNotifcation = true;
+          this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
           return;
         }
 
         if(this.FeatureCommandSetSubscriptionCF02 === true){
           await this.Protocol01.Mode2SetSubscriptions_CF02();
+          this.PanelReceivingNotifcation = true;
+          this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
           return;
         }
 
         if(this.FeatureCommandSetSubscriptionCF01 === true){
           await this.Protocol01.Mode2SetSubscriptions_CF01();
+          this.PanelReceivingNotifcation = true;
+          this.emit('PanelReceivingNotifiation', this.PanelReceivingNotifcation);
           return;
         }
       }
@@ -364,6 +370,20 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       }
 
       return this.FeatureProtocol02;
+    }
+
+    GetAlarmMemoryDetail(AlarmPriority:BGAlarmPriority, LastArea:number, LastPoint:number){
+      this.semaphore.use(async () => {
+        await this.Protocol01.Mode2ReqAlarmMemoryDetail_CF01(AlarmPriority, LastArea, LastPoint);
+      });
+      return;
+    }
+
+    async GetOutputState(){
+      this.semaphore.use(async () => {
+        await this.Protocol01.Mode2ReqOutputStatus();
+      });
+      return;
     }
 
     async SetOutputState(OutputNumer: number, State:boolean){
