@@ -724,6 +724,7 @@ export class BGProtocolHandler01 {
       }
 
       const command = this.FormatCommand(Protocol, Command, CommandFormat, TotalAreaMask);
+
       this.Controller.PromiseS.write(Buffer.alloc(command.length, command));
 
       let Res: string | Buffer | undefined;
@@ -1554,8 +1555,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 
@@ -1607,8 +1606,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 
@@ -1660,8 +1657,6 @@ export class BGProtocolHandler01 {
         return false;
       }
 
-      this.Controller.PanelReceivingNotifcation = true;
-      this.Controller.emit('PanelReceivingNotifiation', this.Controller.PanelReceivingNotifcation);
       return true;
     }
 
