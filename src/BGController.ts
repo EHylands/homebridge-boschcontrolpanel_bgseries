@@ -372,7 +372,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
       return this.FeatureProtocol02;
     }
 
-    GetAlarmMemoryDetail(AlarmPriority:BGAlarmPriority, LastArea:number, LastPoint:number){
+    async GetAlarmMemoryDetail(AlarmPriority:BGAlarmPriority, LastArea:number, LastPoint:number){
       this.semaphore.use(async () => {
         await this.Protocol01.Mode2ReqAlarmMemoryDetail_CF01(AlarmPriority, LastArea, LastPoint);
       });
