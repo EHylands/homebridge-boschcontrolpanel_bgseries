@@ -10,10 +10,16 @@ export abstract class HKSensor extends HKAccessory {
     SensorType: BGSensorType,
   ) {
 
+    // Set default accessory name
+    let DefaultText = 'Point' + PointNumber;
+    if(platform.Panel.Points[PointNumber].PointText !== ''){
+      DefaultText = platform.Panel.Points[PointNumber].PointText;
+    }
+
     super(
       platform,
       'BGPoint' + platform.Panel.PanelType + SensorType + PointNumber, // UUID, do not change
-      platform.Panel.Points[PointNumber].PointText,
+      DefaultText,
       BGSensorType[SensorType] + ' (Point' + PointNumber + ')',
     );
 

@@ -13,10 +13,16 @@ export class HKSecurityPanel extends HKAccessory {
     private readonly PasscodeFollowScope:boolean,
   ) {
 
+    // Set default accessory name
+    let DefaultText = 'Area' + AreaMonitored;
+    if(platform.Panel.Areas[AreaMonitored].AreaText !== ''){
+      DefaultText = platform.Panel.Areas[AreaMonitored].AreaText;
+    }
+
     super(
       platform,
       'BGArea' + platform.Panel.PanelType + AreaMonitored, // UUID, do not change
-      platform.Panel.Areas[AreaMonitored].AreaText,
+      DefaultText,
       'BGPanel' + AreaMonitored,
     );
 
@@ -79,11 +85,6 @@ export class HKSecurityPanel extends HKAccessory {
         this.platform.log.error('Security System: Error reading Area Status');
       }
     }
-  }
-
-  SetFaulted(){
-    // Not Working
-    // this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,new Error(''));
   }
 
   handleSecuritySystemTargetStateSet(value) {
