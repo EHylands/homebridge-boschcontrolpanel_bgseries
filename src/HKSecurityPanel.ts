@@ -71,7 +71,7 @@ export class HKSecurityPanel extends HKAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
   }
 
-  SetAlarmTriggered(AlarmTrigerred){
+  SetAlarmTriggered(AlarmTrigerred:any){
     if(AlarmTrigerred){
       this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
         this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
@@ -87,7 +87,7 @@ export class HKSecurityPanel extends HKAccessory {
     }
   }
 
-  handleSecuritySystemTargetStateSet(value) {
+  handleSecuritySystemTargetStateSet(value:any) {
 
     let AreaToArm:number[] = [this.AreaMonitored];
     if(this.PasscodeFollowScope){

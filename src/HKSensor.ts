@@ -26,5 +26,5 @@ export abstract class HKSensor extends HKAccessory {
     this.platform.log.info(SensorType + ' : Point'+ this.PointNumber + ' - ' + this.Accessory.displayName);
   }
 
-  abstract HandleEventDetected(PointStatus: BGPointStatus);
+  abstract HandleEventDetected(PointStatus: BGPointStatus): void;
 }
