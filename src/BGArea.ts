@@ -1,5 +1,5 @@
 
-import { BGAreaStatus, BGAlarmPriority } from './BGConst';
+import { BGAreaStatus, BGAlarmPriority } from './BGConst.js';
 
 export class BGArea{
     AreaNumber: number;

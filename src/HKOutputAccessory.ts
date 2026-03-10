@@ -1,5 +1,5 @@
-import { HB_BoschControlPanel_BGSeries } from './platform';
-import { HKAccessory } from './HKAccessory';
+import { HB_BoschControlPanel_BGSeries } from './platform.js';
+import { HKAccessory } from './HKAccessory.js';
 import { Service } from 'homebridge';
 
 export class HKOutputAccessory extends HKAccessory {

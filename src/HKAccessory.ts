@@ -1,7 +1,7 @@
 import { PlatformAccessory } from 'homebridge';
-import { BGPanelType } from './BGConst';
-import { HB_BoschControlPanel_BGSeries } from './platform';
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import { BGPanelType } from './BGConst.js';
+import { HB_BoschControlPanel_BGSeries } from './platform.js';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
 export abstract class HKAccessory {
     public Accessory: PlatformAccessory;

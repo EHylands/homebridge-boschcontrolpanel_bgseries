@@ -1,9 +1,9 @@
-import { BGController, BGControllerError, MaxConnectionsInUseFlags } from './BGController';
-import { BGNegativeAcknowledgement, BGPanelType, BGArmingType, BGAlarmPriority } from './BGConst';
-import { BGProtocolVersion } from './BGProtocolVersion';
-import { BGArea } from './BGArea';
-import { BGPoint } from './BGPoint';
-import { BGOutput } from './BGOutput';
+import { BGController, BGControllerError, MaxConnectionsInUseFlags } from './BGController.js';
+import { BGNegativeAcknowledgement, BGPanelType, BGArmingType, BGAlarmPriority } from './BGConst.js';
+import { BGProtocolVersion } from './BGProtocolVersion.js';
+import { BGArea } from './BGArea.js';
+import { BGPoint } from './BGPoint.js';
+import { BGOutput } from './BGOutput.js';
 
 export class BGProtocolHandler01 {
 

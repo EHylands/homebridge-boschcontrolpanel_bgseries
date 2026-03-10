@@ -1,6 +1,6 @@
-import { BGAreaStatus, BGArmingType, BGPanelType } from './BGConst';
-import { HKAccessory } from './HKAccessory';
-import { HB_BoschControlPanel_BGSeries } from './platform';
+import { BGAreaStatus, BGArmingType, BGPanelType } from './BGConst.js';
+import { HKAccessory } from './HKAccessory.js';
+import { HB_BoschControlPanel_BGSeries } from './platform.js';
 import { Service } from 'homebridge';
 
 export class HKSecurityPanel extends HKAccessory {

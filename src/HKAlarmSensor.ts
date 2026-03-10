@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
-import { HB_BoschControlPanel_BGSeries } from './platform';
-import { BGController } from './BGController';
-import { BGAlarmPriority} from './BGConst';
+import { HB_BoschControlPanel_BGSeries } from './platform.js';
+import { BGController } from './BGController.js';
+import { BGAlarmPriority} from './BGConst.js';
 
 
 export class HKAlarmSensor {

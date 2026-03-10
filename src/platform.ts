@@ -1,17 +1,17 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { BGPanelType, BGUserType, BGAreaStatus, BGAlarmPriority } from './BGConst';
-import { BGController, BGControllerError } from './BGController';
-import { BGPointStatus} from './BGPoint';
-import { HKSecurityPanel } from './HKSecurityPanel';
-import { HKMotionSensor } from './HKMotionSensor';
-import { HKContactSensor } from './HKContactSensor';
-import { HKLeakSensor } from './HKLeakSensor';
-import { HKSmokeSensor } from './HKSmokeSensor';
-import { HKCOSensor } from './HKCOSensor';
-import { HKSensor } from './HKSensor';
-import { HKOutputAccessory } from './HKOutputAccessory';
-import { HKAlarmSensor } from './HKAlarmSensor';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import { BGPanelType, BGUserType, BGAreaStatus, BGAlarmPriority } from './BGConst.js';
+import { BGController, BGControllerError } from './BGController.js';
+import { BGPointStatus} from './BGPoint.js';
+import { HKSecurityPanel } from './HKSecurityPanel.js';
+import { HKMotionSensor } from './HKMotionSensor.js';
+import { HKContactSensor } from './HKContactSensor.js';
+import { HKLeakSensor } from './HKLeakSensor.js';
+import { HKSmokeSensor } from './HKSmokeSensor.js';
+import { HKCOSensor } from './HKCOSensor.js';
+import { HKSensor } from './HKSensor.js';
+import { HKOutputAccessory } from './HKOutputAccessory.js';
+import { HKAlarmSensor } from './HKAlarmSensor.js';
 
 export enum BGSensorType {
   MotionSensor = 'MotionSensor',

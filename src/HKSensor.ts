@@ -1,6 +1,6 @@
-import { BGPointStatus} from './BGPoint';
-import { HKAccessory } from './HKAccessory';
-import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
+import { BGPointStatus} from './BGPoint.js';
+import { HKAccessory } from './HKAccessory.js';
+import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform.js';
 
 export abstract class HKSensor extends HKAccessory {
 

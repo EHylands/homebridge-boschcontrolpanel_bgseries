@@ -1,5 +1,5 @@
-import { BGController, BGControllerError } from './BGController';
-import { BGPanelType } from './BGConst';
+import { BGController, BGControllerError } from './BGController.js';
+import { BGPanelType } from './BGConst.js';
 
 
 export class BGProtocolHandler02 {

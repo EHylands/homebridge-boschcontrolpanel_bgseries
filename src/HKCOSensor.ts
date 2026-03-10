@@ -1,7 +1,7 @@
 import { Service} from 'homebridge';
-import { HKSensor } from './HKSensor';
-import { BGPointStatus} from './BGPoint';
-import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform';
+import { HKSensor } from './HKSensor.js';
+import { BGPointStatus} from './BGPoint.js';
+import { BGSensorType, HB_BoschControlPanel_BGSeries } from './platform.js';
 
 export class HKCOSensor extends HKSensor {
   private service: Service;
