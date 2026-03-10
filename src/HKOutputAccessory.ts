@@ -10,10 +10,16 @@ export class HKOutputAccessory extends HKAccessory {
     public OutputNumber:number,
   ) {
 
+    // Set default accessory name
+    let DefaultText = 'Output' + OutputNumber;
+    if(platform.Panel.Outputs[OutputNumber].OutputText !== ''){
+      DefaultText = platform.Panel.Outputs[OutputNumber].OutputText;
+    }
+
     super(
       platform,
       'BGOutput' + platform.Panel.PanelType + OutputNumber, // UUID, do not change
-      platform.Panel.Outputs[OutputNumber].OutputText, // Accessory name
+      DefaultText, // Accessory name
       'BGOutput' + OutputNumber, // Accessory serial number
     );
 
@@ -26,7 +32,7 @@ export class HKOutputAccessory extends HKAccessory {
       .onSet(this.HandleOnSet.bind(this));
   }
 
-  HandleOnSet(value) {
+  HandleOnSet(value:any) {
     this.platform.Panel.SetOutputState(this.OutputNumber, value);
   }
 

@@ -13,10 +13,16 @@ export class HKSecurityPanel extends HKAccessory {
     private readonly PasscodeFollowScope:boolean,
   ) {
 
+    // Set default accessory name
+    let DefaultText = 'Area' + AreaMonitored;
+    if(platform.Panel.Areas[AreaMonitored].AreaText !== ''){
+      DefaultText = platform.Panel.Areas[AreaMonitored].AreaText;
+    }
+
     super(
       platform,
       'BGArea' + platform.Panel.PanelType + AreaMonitored, // UUID, do not change
-      platform.Panel.Areas[AreaMonitored].AreaText,
+      DefaultText,
       'BGPanel' + AreaMonitored,
     );
 
@@ -65,7 +71,7 @@ export class HKSecurityPanel extends HKAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState).updateValue(HKTargetStatus);
   }
 
-  SetAlarmTriggered(AlarmTrigerred){
+  SetAlarmTriggered(AlarmTrigerred:any){
     if(AlarmTrigerred){
       this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,
         this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED);
@@ -81,12 +87,7 @@ export class HKSecurityPanel extends HKAccessory {
     }
   }
 
-  SetFaulted(){
-    // Not Working
-    // this.service.updateCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState,new Error(''));
-  }
-
-  handleSecuritySystemTargetStateSet(value) {
+  handleSecuritySystemTargetStateSet(value:any) {
 
     let AreaToArm:number[] = [this.AreaMonitored];
     if(this.PasscodeFollowScope){

@@ -66,7 +66,8 @@ export class BGProtocolHandler01 {
       // Check Response
       if(Response[2] !== ExpectedResponse){
         if(Response[2] === 0xFD){
-          this.Controller.emit('ControllerError', BGControllerError.BoschPanelError, Name + ' ' + BGNegativeAcknowledgement[Response[3]]);
+          const ErrorMsg = Name + ' ' + BGNegativeAcknowledgement[Number(Response[3])];
+          this.Controller.emit('ControllerError', BGControllerError.BoschPanelError, ErrorMsg);
         } else{
           this.Controller.emit('ControllerError', BGControllerError.UndefinedError, Name);
         }
@@ -1100,7 +1101,7 @@ export class BGProtocolHandler01 {
     // This command retrieves output text
     // Supported in Protocol Version 2.5
     //
-    async Mode2ReqOutputText_CF03(OutputNumber):Promise<boolean>{
+    async Mode2ReqOutputText_CF03(OutputNumber:number):Promise<boolean>{
 
       // Check min supported version
       const MinVersion = new BGProtocolVersion(2, 5, 0);
