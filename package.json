@@ -32,7 +32,7 @@
     "Solution 3000"
   ],
   "dependencies": {
-    "homebridge-config-ui-x": "^4.54.1",
+    "homebridge-config-ui-x": "^5.19.0",
     "promise-socket": "^7.0.0",
     "tiny-typed-emitter": "^2.1.0",
     "ts-semaphore": "^1.0.0"
