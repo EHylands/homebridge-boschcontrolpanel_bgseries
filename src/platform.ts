@@ -22,8 +22,8 @@ export enum BGSensorType {
 }
 
 export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
-  public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Service!: typeof Service;
+  public readonly Characteristic!: typeof Characteristic;
 
   public accessories: PlatformAccessory[] = [];
   public CreatedAccessories: PlatformAccessory[] = [];
@@ -54,6 +54,9 @@ export class HB_BoschControlPanel_BGSeries implements DynamicPlatformPlugin {
 
     this.Panel = new BGController(this.PanelHost, this.PanelPort, BGUserType.AutomationUser, this.PanelPasscode,
       this.ForceLegacyMode);
+
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
 
     this.api.on('didFinishLaunching', () => {
       this.DiscoverDevices();
