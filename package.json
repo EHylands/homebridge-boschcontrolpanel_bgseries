@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Bosch Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
-  "version": "0.8.3",
+  "version": "0.8.4-beta.0",
   "description": "Homebridge plugin for Bosch Control Panel.",
   "license": "MIT",
   "repository": {
@@ -12,9 +12,8 @@
     "url": "https://github.com/ehylands/homebridge-boschcontrolpanel_bgseries/issues"
   },
   "engines": {
-    "node": ">=15.0.0 || ^18.20.4 || ^20.15.1",
-    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
-
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0",
+    "node": "^20.15.1 || ^22.0.0 || ^24.0.0"
   },
   "main": "dist/index.js",
   "scripts": {
@@ -48,6 +47,6 @@
     "nodemon": "^2.0.7",
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2.2"
+    "typescript": "^5.9.3"
   }
 }
