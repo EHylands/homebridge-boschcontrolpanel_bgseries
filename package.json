@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Bosch Control Panel",
   "name": "homebridge-boschcontrolpanel_bgseries",
-  "version": "0.8.4-beta.1",
+  "version": "0.8.4-beta.2",
   "type": "module",
   "description": "Homebridge plugin for Bosch Control Panel.",
   "license": "MIT",
