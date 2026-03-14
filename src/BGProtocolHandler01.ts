@@ -242,7 +242,7 @@ export class BGProtocolHandler01 {
       const UserTypeArray = new Uint8Array([this.Controller.UserType]);
       const T = new this.Controller.Util.TextEncoder();
 
-      let PasscodeArray = new Uint8Array([]);
+      let PasscodeArray: Uint8Array = new Uint8Array([]);
       if(this.Controller.Passcode.length < 24){
         PasscodeArray = T.encode(this.Controller.Passcode + ' ');
       } else{
