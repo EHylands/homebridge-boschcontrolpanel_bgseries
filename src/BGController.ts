@@ -12,6 +12,8 @@ import { BGProtocolHandler02 } from './BGProtocolHandler02.js';
 import {PromiseSocket} from 'promise-socket';
 import tls = require('tls');
 import net = require('net');
+import Semaphore from 'ts-semaphore';
+import * as util from 'node:util';
 
 export enum BGControllerError{
 
@@ -55,8 +57,7 @@ export interface BoschControllerMode2Event {
 }
 
 export class BGController extends TypedEmitter<BoschControllerMode2Event> {
-    Util = require('util');
-    Semaphore = require('ts-semaphore');
+    Util = util;
 
     private Host: string;
     private Port: number;
@@ -101,7 +102,7 @@ export class BGController extends TypedEmitter<BoschControllerMode2Event> {
     // ProtocolHandler
     Protocol01 = new BGProtocolHandler01(this);
     Protocol02 = new BGProtocolHandler02(this);
-    private semaphore = new this.Semaphore(1);
+    private semaphore = new Semaphore(1);
 
     // Legacy options
     LegacyMode = false;
